@@ -160,6 +160,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .unit input{padding-right:32px}
 
 /* help button */
+.lrow .nm .help{
+  width:15px;height:15px;line-height:15px;font-size:10px;
+  margin-left:5px;vertical-align:1px;background:var(--ink-3);
+}
+.lrow .nm .help:hover{background:var(--pine)}
 .help{
   width:17px;height:17px;border-radius:50%;border:none;cursor:pointer;
   background:var(--pine);color:#fff;font-size:11px;font-weight:700;
@@ -381,11 +386,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <div class="row2">
           <div>
             <label class="lb" for="acq">취득일자 <span class="req">*</span></label>
-            <input type="date" id="acq">
+            <input type="date" id="acq" min="1900-01-01" max="2099-12-31">
           </div>
           <div>
             <label class="lb" for="sal">양도일자 <span class="req">*</span></label>
-            <input type="date" id="sal">
+            <input type="date" id="sal" min="1900-01-01" max="2099-12-31">
           </div>
         </div>
         <div class="hint" id="holdHint"></div>
@@ -470,11 +475,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <div class="row2" style="margin-top:8px">
           <div>
             <label class="lb" for="rin" style="font-size:11.5px">전입일 · 실제 거주 시작</label>
-            <input type="date" id="rin">
+            <input type="date" id="rin" min="1900-01-01" max="2099-12-31">
           </div>
           <div>
             <label class="lb" for="rout" style="font-size:11.5px">전출일 · 거주 종료</label>
-            <input type="date" id="rout">
+            <input type="date" id="rout" min="1900-01-01" max="2099-12-31">
           </div>
         </div>
         <div class="hint" id="liveHint"></div>
@@ -573,6 +578,102 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>세금계산서 · 계산서 · 신용카드매출전표 · 현금영수증 같은 적격증빙을 갖추거나, 실제 지출사실이 <b>금융거래 증명서류</b>로 확인되면 인정됩니다. 현금으로 주고 영수증만 있고 계좌이체 내역이 없으면 부인될 위험이 큽니다.</p>
       <div class="callout"><p><b>환산취득가액을 쓰는 경우는 다릅니다.</b> 자본적지출과 양도비를 실액으로 공제할 수 없고, 취득 당시 기준시가에 3%(미등기 0.3%)를 곱한 개산공제만 적용됩니다.</p>
       <p>다만 실제 확인되는 필요경비 합계가 개산공제액보다 크면 실액을 선택할 수 있으므로, 두 방식을 모두 계산해 유리한 쪽을 택하세요.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 장기보유특별공제 모달 ============ -->
+<div class="mask" id="ltcgMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ltTitle">
+    <div class="mhd"><h3 id="ltTitle">장기보유특별공제</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>오래 보유한 부동산은 물가 상승분까지 양도차익으로 잡히므로, 보유기간에 비례해 양도차익의 일정 비율을 빼줍니다. <b>3년 이상 보유</b>해야 시작됩니다.</p>
+      <p>공제표는 두 가지입니다. 소득세법이 정한 순서대로 <b>일반 공제</b>와 <b>1세대 1주택 공제</b>로 나뉩니다.</p>
+
+      <h4>일반 공제 — 토지 · 건물 · 일반 주택</h4>
+      <p>보유기간만 봅니다. 3년에 6%로 시작해 1년마다 2%p씩 붙고 15년에 30%로 멈춥니다.</p>
+      <table class="mtable">
+        <tr><th>보유기간</th><th>공제율</th><th>보유기간</th><th>공제율</th></tr>
+        <tr><td>3년</td><td>6%</td><td>10년</td><td>20%</td></tr>
+        <tr><td>4년</td><td>8%</td><td>11년</td><td>22%</td></tr>
+        <tr><td>5년</td><td>10%</td><td>12년</td><td>24%</td></tr>
+        <tr><td>6년</td><td>12%</td><td>13년</td><td>26%</td></tr>
+        <tr><td>7년</td><td>14%</td><td>14년</td><td>28%</td></tr>
+        <tr><td>8년</td><td>16%</td><td>15년 이상</td><td>30%</td></tr>
+        <tr><td>9년</td><td>18%</td><td></td><td></td></tr>
+      </table>
+
+      <h4>1세대 1주택 공제 — 최대 80%</h4>
+      <p>비과세 요건을 갖추고 <b>2년 이상 거주</b>한 1세대 1주택에만 적용됩니다. 보유기간과 거주기간을 따로 계산해 <b>더합니다.</b> 각각 최대 40%, 합쳐서 최대 80%입니다.</p>
+      <table class="mtable">
+        <tr><th>기간</th><th class="ok">보유분</th><th class="ok">거주분</th></tr>
+        <tr><td>2년</td><td>—</td><td>8%</td></tr>
+        <tr><td>3년</td><td>12%</td><td>12%</td></tr>
+        <tr><td>4년</td><td>16%</td><td>16%</td></tr>
+        <tr><td>5년</td><td>20%</td><td>20%</td></tr>
+        <tr><td>6년</td><td>24%</td><td>24%</td></tr>
+        <tr><td>7년</td><td>28%</td><td>28%</td></tr>
+        <tr><td>8년</td><td>32%</td><td>32%</td></tr>
+        <tr><td>9년</td><td>36%</td><td>36%</td></tr>
+        <tr><td>10년 이상</td><td>40%</td><td>40%</td></tr>
+      </table>
+      <div class="callout"><p><b>거주 2년이 갈림길입니다.</b> 10년 보유했어도 거주가 2년에 못 미치면 이 표를 못 쓰고 일반 공제 20%로 떨어집니다. 60%p 차이입니다.</p>
+      <p>보유는 10년인데 뒤늦게 들어가 6년만 살았다면 40% + 24% = <b>64%</b>이지 80%가 아닙니다.</p></div>
+
+      <h4>공제가 아예 없는 경우</h4>
+      <ul>
+        <li>보유 3년 미만</li>
+        <li>조정대상지역 다주택 중과 대상 주택 — 중과의 실제 타격은 세율보다 이쪽이 큽니다</li>
+        <li>분양권 — 주택이 아니라 권리라서 적용 대상이 아닙니다</li>
+        <li>미등기 양도자산</li>
+      </ul>
+      <p>기간은 <b>만 1년 단위</b>로만 셉니다. 4년 8개월은 4년이고 남은 8개월은 버립니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 세율 모달 ============ -->
+<div class="mask" id="rateMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rtTitle">
+    <div class="mhd"><h3 id="rtTitle">양도소득세 세율</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>세율은 <b>보유기간</b>과 <b>자산 종류</b>로 정해집니다. 2년 이상 보유하면 소득 구간별 기본세율을, 그보다 짧으면 단일 단기세율을 씁니다.</p>
+
+      <h4>기본세율 — 2년 이상 보유</h4>
+      <p>과세표준 구간마다 세율이 올라가는 누진 구조입니다. 구간이 넘어갈 때 세금이 급등하지 않도록 <b>누진공제액</b>을 빼줍니다. 계산식은 <b>과세표준 × 세율 − 누진공제</b>입니다.</p>
+      <table class="mtable">
+        <tr><th>과세표준</th><th>세율</th><th>누진공제</th></tr>
+        <tr><td>1,400만원 이하</td><td>6%</td><td>—</td></tr>
+        <tr><td>5,000만원 이하</td><td>15%</td><td>126만원</td></tr>
+        <tr><td>8,800만원 이하</td><td>24%</td><td>576만원</td></tr>
+        <tr><td>1억 5,000만원 이하</td><td>35%</td><td>1,544만원</td></tr>
+        <tr><td>3억원 이하</td><td>38%</td><td>1,994만원</td></tr>
+        <tr><td>5억원 이하</td><td>40%</td><td>2,594만원</td></tr>
+        <tr><td>10억원 이하</td><td>42%</td><td>3,594만원</td></tr>
+        <tr><td>10억원 초과</td><td>45%</td><td>6,594만원</td></tr>
+      </table>
+
+      <h4>단기 보유 — 2년 미만</h4>
+      <p>단기 차익을 노린 거래를 억제하는 취지라 누진 없이 단일세율로 매깁니다.</p>
+      <table class="mtable">
+        <tr><th>보유기간</th><th>주택 · 조합원입주권</th><th>그 밖의 자산</th></tr>
+        <tr><td>1년 미만</td><td>70%</td><td>50%</td></tr>
+        <tr><td>1년 이상 2년 미만</td><td>60%</td><td>40%</td></tr>
+      </table>
+
+      <h4>자산별 특례</h4>
+      <table class="mtable">
+        <tr><th>구분</th><th>세율</th></tr>
+        <tr><td>분양권</td><td>1년 미만 70% · 1년 이상 60%</td></tr>
+        <tr><td>비사업용토지</td><td>기본세율 + 10%p</td></tr>
+        <tr><td>미등기 양도자산</td><td>70%</td></tr>
+        <tr><td>조정대상지역 2주택</td><td>기본세율 + 20%p</td></tr>
+        <tr><td>조정대상지역 3주택 이상</td><td>기본세율 + 30%p</td></tr>
+      </table>
+      <p>중과세율은 기본세율에 가산폭만 얹는 방식이라 <b>누진공제액은 그대로</b>입니다. 예를 들어 3주택자가 과세표준 3억원이면 38% + 30%p = 68%를 적용하고 누진공제 1,994만원을 그대로 뺍니다.</p>
+
+      <div class="callout"><p><b>비교과세.</b> 중과 대상인데 보유가 2년에 못 미치면 단기세율과 중과세율을 모두 계산해 <b>세액이 큰 쪽</b>을 적용합니다. 이 계산기는 두 값을 비교해 자동으로 반영합니다.</p></div>
+      <p>여기에 결정세액의 10%가 지방소득세로 따로 붙습니다. 실제 부담은 표의 세율보다 1.1배 무겁다고 보시면 됩니다.</p>
     </div>
   </div>
 </div>
@@ -766,7 +867,28 @@ Array.prototype.forEach.call(document.querySelectorAll('.quick'), function(q){
 });
 
 /* ---------------- 이벤트 ---------------- */
-['acq','sal','rin','rout'].forEach(function(id){ $(id).addEventListener('change', onInput); });
+/* 브라우저 날짜칸은 연도를 여섯 자리까지 받는다. 네 자리로 잘라 맞춘다. */
+function clampYear(el){
+  var v = el.value;
+  if(!v) return false;
+  var m = v.match(/^(\d+)-(\d{2})-(\d{2})$/);
+  if(!m) return false;
+  var y = m[1];
+  if(y.length > 4) y = y.slice(0, 4);       // 202600 → 2026
+  var yn = parseInt(y, 10);
+  if(!yn || yn < 1900) yn = 1900;
+  if(yn > 2099) yn = 2099;
+  var fixed = ('0000' + yn).slice(-4) + '-' + m[2] + '-' + m[3];
+  if(fixed !== v){ el.value = fixed; return true; }
+  return false;
+}
+
+['acq','sal','rin','rout'].forEach(function(id){
+  $(id).addEventListener('change', function(){
+    if(clampYear($(id))) toast('연도는 네 자리로 입력하세요');
+    onInput();
+  });
+});
 ['adjBuy','adjSale','usedBasic','unreg','farm'].forEach(function(id){ $(id).addEventListener('change', onInput); });
 $('asset').addEventListener('change', function(){ syncVisibility(); onInput(); });
 
@@ -803,6 +925,13 @@ function closeModal(m){ m.classList.remove('on'); document.body.style.overflow='
 $('exHelp').addEventListener('click', function(){ openModal($('exMask')); });
 $('liveHelp').addEventListener('click', function(){ openModal($('liveMask')); });
 $('rdHelp').addEventListener('click', function(){ openModal($('rdMask')); });
+$('out').addEventListener('click', function(e){
+  var b = e.target;
+  while(b && b !== this && !b.getAttribute) b = b.parentNode;
+  if(!b || !b.getAttribute || !b.getAttribute('data-help')) return;
+  var m = $(b.getAttribute('data-help') + 'Mask');
+  if(m) openModal(m);
+});
 Array.prototype.forEach.call(document.querySelectorAll('.mask'), function(m){
   m.addEventListener('click', function(e){ if(e.target === m || e.target.hasAttribute('data-close')) closeModal(m); });
 });
@@ -1109,12 +1238,13 @@ $('imgBtn').addEventListener('click', function(){ saveAs('png'); });
 /* ---------------- 렌더 헬퍼 ---------------- */
 var RPT = { rows:[], badges:[], notes:[], krw:'' };
 
-function row(no, op, name, sub, amt, cls){
+function row(no, op, name, sub, amt, cls, help){
   RPT.rows.push({ no:no||'', op:op||'', name:name, sub:sub||'', amt:amt, cls:cls||'' });
+  var btn = help ? ' <button class="help" type="button" data-help="'+help+'" aria-label="설명 보기">?</button>' : '';
   return '<div class="lrow '+(cls||'')+'">'
     + '<span class="no">'+(no||'')+'</span>'
     + '<span class="op">'+(op||'')+'</span>'
-    + '<span class="nm">'+name+(sub?'<i>'+sub+'</i>':'')+'</span>'
+    + '<span class="nm">'+name+btn+(sub?'<i>'+sub+'</i>':'')+'</span>'
     + '<span class="amt">'+amt+'</span></div>';
 }
 
@@ -1224,16 +1354,16 @@ function run(){
   else if(holdY < 3)           ltBlocked = '보유 3년 미만';
 
   if(ltBlocked){
-    badges.push(['grey','장특공 배제 · '+ltBlocked]);
+    badges.push(['grey','장기보유특별공제 배제 · '+ltBlocked]);
   } else if(oneHouseOK && liveY >= 2){
     var hh = ltcgHold1H(holdY), ll = ltcgLive1H(liveY);
     ltRate = Math.min(0.80, hh + ll);
-    ltLabel = '표2 · 보유 '+holdY+'년 '+Math.round(hh*100)+'% + 거주 '+liveY+'년 '+Math.round(ll*100)+'%';
-    badges.push(['','장특공 표2 '+Math.round(ltRate*100)+'%']);
+    ltLabel = '1세대 1주택 · 보유 '+holdY+'년 '+Math.round(hh*100)+'% + 거주 '+liveY+'년 '+Math.round(ll*100)+'%';
+    badges.push(['','장기보유특별공제 '+Math.round(ltRate*100)+'%']);
   } else {
     ltRate = ltcgGeneral(holdY);
-    ltLabel = '표1 · 보유 '+holdY+'년 연 2%';
-    if(ltRate) badges.push(['','장특공 표1 '+Math.round(ltRate*100)+'%']);
+    ltLabel = '일반 · 보유 '+holdY+'년 × 연 2%';
+    if(ltRate) badges.push(['','장기보유특별공제 '+Math.round(ltRate*100)+'%']);
   }
   var ltAmt = Math.max(0, taxableGain) * ltRate;
   var income = Math.max(0, taxableGain - ltAmt);
@@ -1295,11 +1425,11 @@ function run(){
   if(apportioned){
     h += row('','×','과세대상 양도차익','(양도가액 − 12억) ÷ 양도가액 = '+(Math.round((sp-HIGH)/sp*1000)/10)+'%', won(taxableGain), 'sum');
   }
-  h += row('④','−','장기보유특별공제', ltBlocked ? '배제 — '+ltBlocked : ltLabel, ltRate ? won(ltAmt) : '0원', ltRate?'':'muted');
+  h += row('④','−','장기보유특별공제', ltBlocked ? '배제 — '+ltBlocked : ltLabel, ltRate ? won(ltAmt) : '0원', ltRate?'':'muted', 'ltcg');
   h += row('','','양도소득금액','', won(income), 'sum');
   h += row('⑤','−','양도소득 기본공제', bd ? '연 250만원 · 자산군별 1회' : ($('usedBasic').checked ? '올해 사용 완료' : (unreg?'미등기 배제':'공제 대상 없음')), won(bd), bd?'':'muted');
   h += row('','','과세표준','', won(base), 'sum');
-  h += row('⑥','×','세율', rateLabel || '과세표준 없음', '', 'muted');
+  h += row('⑥','×','세율', rateLabel || '과세표준 없음', '', 'muted', 'rate');
   h += row('','','산출세액','', won(calcTax), 'sum');
   if(rd) h += row('⑦','−','감면세액','조세특례제한법', won(reduced), '');
   h += row('','','결정세액','', won(determined), 'sum');
