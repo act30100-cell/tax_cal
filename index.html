@@ -60,19 +60,23 @@ body{
   transition:opacity .6s ease, visibility .6s;
 }
 #splash.done{opacity:0;visibility:hidden;pointer-events:none}
-.sp-in{
-  display:flex;flex-direction:column;align-items:center;text-align:center;
-  opacity:0;transform:translateY(18px) scale(.92);
-  animation:spIn 1s cubic-bezier(.16,.84,.34,1) .15s forwards;
+.sp-in{display:flex;flex-direction:column;align-items:center;text-align:center}
+/* 아이콘은 시스템 실행화면에서 이어받은 것처럼 처음부터 그대로 놓인다 */
+.sp-icon{
+  width:118px;height:118px;display:block;
+  filter:drop-shadow(0 10px 26px rgba(0,0,0,.22));
+}
+.sp-text{
+  opacity:0;transform:translateY(16px);
+  animation:spIn .95s cubic-bezier(.16,.84,.34,1) .25s forwards;
 }
 @keyframes spIn{to{opacity:1;transform:none}}
-.sp-icon{width:116px;height:116px;display:block;filter:drop-shadow(0 10px 26px rgba(0,0,0,.22))}
 .sp-title{
   font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;
   font-size:32px;color:#fff;margin:22px 0 0;letter-spacing:.01em;line-height:1.2;
 }
 .sp-sub{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
   margin:11px 0 0;font-size:13px;font-weight:700;letter-spacing:.09em;
   color:rgba(255,255,255,.6);
 }
@@ -80,7 +84,7 @@ body{
   content:'';width:20px;height:1px;background:rgba(255,255,255,.34);
 }
 @media(prefers-reduced-motion:reduce){
-  .sp-in{animation:none;opacity:1;transform:none}
+  .sp-text{animation:none;opacity:1;transform:none}
   #splash{transition:opacity .2s}
 }
 header{
@@ -330,8 +334,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 <div id="splash">
   <div class="sp-in">
     <svg class="sp-icon" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="116" fill="#0F4B3E"/><g fill="#FFFFFF"><polygon points="256,104 442,220 70,220"/><rect x="112" y="198" width="288" height="254" rx="30"/></g><path d="M128 200 L256 132 L384 200" fill="none" stroke="#0F4B3E" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><g fill="#0F4B3E"><circle cx="250" cy="278" r="46"/><path d="M134 440 a116 104 0 0 1 232 0 Z"/></g><circle cx="340" cy="388" r="38" fill="#E8763A"/><g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"><path d="M324.8 367.1 L333.4 394.7 L340 369.9 L346.7 394.7 L355.2 367.1" stroke-width="6.7"/><path d="M320 380.4 H360" stroke-width="4.8"/><path d="M320 389.9 H360" stroke-width="4.8"/></g></svg>
-    <div class="sp-title">세금계산기</div>
-    <div class="sp-sub">부동산 양도소득세</div>
+    <div class="sp-text">
+      <div class="sp-title">세금계산기</div>
+      <div class="sp-sub">부동산 양도소득세</div>
+    </div>
   </div>
 </div>
 <script>
@@ -1352,9 +1358,11 @@ try{
       display: 'standalone',
       orientation: 'portrait',
       background_color: '#175F50',
-      theme_color: '#175F50'
-      /* icons 를 넣으면 안드로이드가 자체 시작 화면을 한 번 더 띄운다.
-         홈 화면 아이콘은 위의 apple-touch-icon 이 대신 쓰인다. */
+      theme_color: '#175F50',
+      icons: [
+        { src: appIcon.href, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: appIcon.href, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
     };
     var link = document.createElement('link');
     link.rel = 'manifest';
