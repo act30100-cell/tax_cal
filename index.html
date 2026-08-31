@@ -44,7 +44,7 @@ body{
   color:var(--ink);
   font-family:'NanumSquareRound','Nanum Square Round','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   font-size:15px;line-height:1.62;
-  padding:0 0 64px;
+  padding:0 0 48px;
   -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:1120px;margin:0 auto;padding:0 16px;
@@ -90,18 +90,12 @@ body{
 header{
   border-bottom:1px solid var(--rule);
   background:linear-gradient(180deg,#FFFFFF 0%,#FBFCFA 100%);
-  padding:26px 0 22px;margin-bottom:22px;
-}
-.eyebrow{
-  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--pine);font-weight:700;margin:0 0 6px;
+  padding:17px 0 15px;margin-bottom:16px;
 }
 h1{
   font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;
-  font-size:27px;line-height:1.3;margin:0 0 8px;letter-spacing:-.01em;
+  font-size:23px;line-height:1.25;margin:0;letter-spacing:-.01em;
 }
-.sub{margin:0;color:var(--ink-3);font-size:13px}
-.sub b{color:var(--ink-2);font-weight:700}
 
 /* ---------- layout ---------- */
 .grid{display:grid;grid-template-columns:1fr;gap:18px}
@@ -234,6 +228,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   font-size:12.5px;color:#14513F;line-height:1.65;
 }
 .info b{font-weight:800}
+.stale{
+  margin:0;padding:11px 16px;background:var(--flag-soft);
+  border-bottom:1px solid var(--rule-2);
+  font-size:12.5px;color:#8A3E14;line-height:1.5;font-weight:700;
+}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.7}
 .empty b{display:block;color:var(--ink-2);font-size:14px;margin-bottom:4px;font-weight:700}
 
@@ -356,11 +355,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </script>
 
 <header>
-  <div class="wrap">
-    <p class="eyebrow">양도소득세 · 소득세법 제94조 이하</p>
-    <h1>부동산 양도소득세 계산기</h1>
-    <p class="sub">양도가액에서 <b>총부담세액</b>까지 8단계 계산 흐름을 그대로 따라갑니다. 상담 화면에 그대로 띄워 쓰도록 만들었습니다.</p>
-  </div>
+  <div class="wrap"><h1>부동산 양도소득세 계산기</h1></div>
 </header>
 
 <div class="wrap">
@@ -517,9 +512,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 <div class="ledger-col">
   <section class="card ledger">
     <div class="hd"><span class="idx">계산</span><h2>세액 계산 흐름</h2><span class="note" id="dateNote"></span></div>
+    <div class="stale" id="stale" style="display:none">입력이 바뀌었습니다. <b>계산하기</b>를 다시 눌러 주세요.</div>
     <div id="badges" class="badges" style="display:none"></div>
     <div class="bd" id="out">
-      <div class="empty"><b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을<br>채우면 계산이 바로 시작됩니다.</div>
+      <div class="empty"><b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.</div>
     </div>
     <div class="foot" id="foot" style="display:none"></div>
     <div class="pdfbar" id="pdfbar" style="display:none">
@@ -750,7 +746,7 @@ var houseCount = 1;
     var raw = digits(el.value);
     if(raw.length > 15) raw = raw.slice(0,15);
     el.value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
-    run();
+    onInput();
   });
 });
 
@@ -765,20 +761,20 @@ Array.prototype.forEach.call(document.querySelectorAll('.quick'), function(q){
     if(b.hasAttribute('data-clear')) cur = 0;
     else cur += parseInt(b.getAttribute('data-add'), 10);
     el.value = cur ? cur.toLocaleString('ko-KR') : '';
-    run();
+    onInput();
   });
 });
 
 /* ---------------- 이벤트 ---------------- */
-['acq','sal','rin','rout'].forEach(function(id){ $(id).addEventListener('change', run); });
-['adjBuy','adjSale','usedBasic','unreg','farm'].forEach(function(id){ $(id).addEventListener('change', run); });
-$('asset').addEventListener('change', function(){ syncVisibility(); run(); });
+['acq','sal','rin','rout'].forEach(function(id){ $(id).addEventListener('change', onInput); });
+['adjBuy','adjSale','usedBasic','unreg','farm'].forEach(function(id){ $(id).addEventListener('change', onInput); });
+$('asset').addEventListener('change', function(){ syncVisibility(); onInput(); });
 
 $('liveAll').addEventListener('change', function(){
   var on = this.checked;
   $('rin').disabled = on; $('rout').disabled = on;
   if(on){ $('rin').value = $('acq').value; $('rout').value = $('sal').value; }
-  run();
+  onInput();
 });
 
 Array.prototype.forEach.call($('cntSeg').querySelectorAll('button'), function(b){
@@ -788,7 +784,7 @@ Array.prototype.forEach.call($('cntSeg').querySelectorAll('button'), function(b)
     });
     b.setAttribute('aria-pressed','true');
     houseCount = parseInt(b.dataset.v,10);
-    syncVisibility(); run();
+    syncVisibility(); onInput();
   });
 });
 
@@ -820,13 +816,13 @@ function toast(msg, ms){
 }
 
 $('calcBtn').addEventListener('click', function(){
-  run();
   var missing = ['sp','ap','acq','sal'].filter(function(id){ return !$(id).value; });
   if(missing.length){
     $(missing[0]).focus();
     toast('양도가액 · 취득가액 · 취득일 · 양도일을 모두 입력하세요');
     return;
   }
+  run();
   if(window.innerWidth < 940){
     document.querySelector('.ledger').scrollIntoView({behavior:'smooth', block:'start'});
   }
@@ -842,7 +838,9 @@ $('resetBtn').addEventListener('click', function(){
   Array.prototype.forEach.call($('cntSeg').querySelectorAll('button'), function(x, i){
     x.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
   });
-  syncVisibility(); run();
+  syncVisibility();
+  refreshHints();
+  showEmpty('<b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.');
 });
 
 /* ---------------- PDF 생성 (외부 라이브러리 없음) ---------------- */
@@ -1121,43 +1119,60 @@ function row(no, op, name, sub, amt, cls){
 }
 
 /* ---------------- 메인 ---------------- */
-function run(){
-  var asset = $('asset').value;
-  var isHouse = asset === 'house';
-  var acq = pd($('acq').value), sal = pd($('sal').value);
-  var sp = num($('sp')), ap = num($('ap')), ex = num($('ex')), rd = num($('rd'));
-
-  $('spK').textContent = korean(sp);
-  $('apK').textContent = korean(ap);
-  $('exK').textContent = korean(ex);
-  $('rdK').textContent = korean(rd);
+/* 입력칸 옆 안내만 갱신한다. 계산 결과는 건드리지 않는다. */
+function refreshHints(){
+  $('spK').textContent = korean(num($('sp')));
+  $('apK').textContent = korean(num($('ap')));
+  $('exK').textContent = korean(num($('ex')));
+  $('rdK').textContent = korean(num($('rd')));
 
   if($('liveAll').checked){ $('rin').value = $('acq').value; $('rout').value = $('sal').value; }
 
-  /* 기간 */
-  var holdY = 0, liveY = 0;
+  var acq = pd($('acq').value), sal = pd($('sal').value);
   if(acq && sal && sal >= acq){
-    holdY = fullYears(acq, sal);
-    $('holdHint').textContent = '보유기간 ' + ymText(acq,sal) + ' → 만 ' + holdY + '년';
+    $('holdHint').textContent = '보유기간 ' + ymText(acq,sal) + ' → 만 ' + fullYears(acq,sal) + '년';
   } else {
     $('holdHint').textContent = (acq && sal) ? '양도일이 취득일보다 빠릅니다' : '';
   }
   var rin = pd($('rin').value), rout = pd($('rout').value);
   if(rin && rout && rout >= rin){
-    liveY = fullYears(rin, rout);
-    $('liveHint').textContent = '거주기간 ' + ymText(rin,rout) + ' → 만 ' + liveY + '년';
+    $('liveHint').textContent = '거주기간 ' + ymText(rin,rout) + ' → 만 ' + fullYears(rin,rout) + '년';
   } else { $('liveHint').textContent = ''; }
+}
 
-  /* 입력 부족 */
+/* 결과 영역을 비우고 안내만 남긴다 */
+function showEmpty(html){
+  $('out').innerHTML = '<div class="empty">' + html + '</div>';
+  $('stale').style.display = 'none';
+  $('badges').style.display = 'none';
+  $('foot').style.display = 'none';
+  $('pdfbar').style.display = 'none';
+  $('dateNote').textContent = '';
+  RPT = { rows:[], badges:[], notes:[], krw:'' };
+}
+
+/* 계산 결과가 떠 있는 상태에서 입력이 바뀌면 알린다 */
+function markStale(){
+  if(RPT.rows.length) $('stale').style.display = '';
+}
+
+function onInput(){ refreshHints(); markStale(); }
+
+function run(){
+  refreshHints();
+  var asset = $('asset').value;
+  var isHouse = asset === 'house';
+  var acq = pd($('acq').value), sal = pd($('sal').value);
+  var sp = num($('sp')), ap = num($('ap')), ex = num($('ex')), rd = num($('rd'));
+  var holdY = (acq && sal && sal >= acq) ? fullYears(acq, sal) : 0;
+  var rin = pd($('rin').value), rout = pd($('rout').value);
+  var liveY = (rin && rout && rout >= rin) ? fullYears(rin, rout) : 0;
+
   if(!acq || !sal || sal < acq || !sp){
-    $('out').innerHTML = '<div class="empty"><b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을<br>채우면 계산이 바로 시작됩니다.</div>';
-    $('badges').style.display = 'none';
-    $('foot').style.display = 'none';
-    $('pdfbar').style.display = 'none';
-    $('dateNote').textContent = '';
-    RPT = { rows:[], badges:[], notes:[], krw:'' };
+    showEmpty('<b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.');
     return;
   }
+  $('stale').style.display = 'none';
 
   var unreg   = $('unreg').checked;
   var adjBuy  = $('adjBuy').checked;
@@ -1372,7 +1387,7 @@ try{
 }catch(e){}
 
 syncVisibility();
-run();
+refreshHints();
 })();
 </script>
 </body>
