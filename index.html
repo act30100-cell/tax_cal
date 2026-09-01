@@ -90,12 +90,86 @@ body{
 header{
   border-bottom:1px solid var(--rule);
   background:linear-gradient(180deg,#FFFFFF 0%,#FBFCFA 100%);
-  padding:17px 0 15px;margin-bottom:16px;
+  padding:12px 0 11px;margin-bottom:16px;
+  position:sticky;top:0;z-index:60;
 }
+.hdrow{display:flex;align-items:center;gap:11px}
 h1{
   font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;
-  font-size:23px;line-height:1.25;margin:0;letter-spacing:-.01em;
+  font-size:20px;line-height:1.25;margin:0;letter-spacing:-.01em;
 }
+.menubtn{
+  width:38px;height:38px;flex-shrink:0;border:1px solid var(--rule);
+  background:#fff;border-radius:12px;cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.menubtn:hover{border-color:var(--pine)}
+.menubtn span{display:block;width:16px;height:2px;background:var(--ink-2);border-radius:2px;position:relative}
+.menubtn span::before,.menubtn span::after{
+  content:'';position:absolute;left:0;width:16px;height:2px;background:var(--ink-2);border-radius:2px;
+}
+.menubtn span::before{top:-5px}
+.menubtn span::after{top:5px}
+
+/* 메뉴 */
+#menuMask{position:fixed;inset:0;background:rgba(18,33,46,.4);z-index:70;display:none}
+#menuMask.on{display:block}
+#menu{
+  position:fixed;top:0;left:0;right:0;z-index:80;
+  background:#fff;border-bottom:1px solid var(--rule);
+  box-shadow:0 14px 34px -18px rgba(18,33,46,.4);
+  padding:calc(12px + env(safe-area-inset-top)) 0 12px;
+  transform:translateY(-100%);transition:transform .26s cubic-bezier(.2,.8,.3,1);
+}
+#menu.on{transform:none}
+.mtop{display:flex;align-items:center;gap:11px;padding:0 16px 12px;border-bottom:1px solid var(--rule-2);margin-bottom:8px}
+.mtop b{font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;font-size:19px}
+.mtop button{
+  margin-left:auto;border:none;background:#F0F3F0;width:32px;height:32px;border-radius:50%;
+  cursor:pointer;font-size:16px;color:var(--ink-2);line-height:1;
+}
+.mitem{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:13px 16px;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:700;color:var(--ink-2);text-align:left;
+}
+.mitem:hover{background:#FBFCFA}
+.mitem[aria-current=true]{color:var(--pine);background:var(--pine-soft)}
+.mitem .dot{width:8px;height:8px;border-radius:50%;background:var(--rule);flex-shrink:0}
+.mitem[aria-current=true] .dot{background:var(--pine)}
+.mitem small{margin-left:auto;font-size:11.5px;font-weight:400;color:var(--ink-3)}
+
+/* 홈 화면 */
+.homehero{padding:16px 0 20px;text-align:center}
+.homehero h2{
+  font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;
+  font-size:25px;margin:0 0 6px;letter-spacing:-.01em;
+}
+.homehero p{margin:0;font-size:13px;color:var(--ink-3)}
+.homelist{display:grid;gap:12px}
+@media(min-width:800px){.homelist{grid-template-columns:repeat(3,1fr)}}
+.homecard{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:#fff;border:1px solid var(--rule);border-radius:16px;
+  box-shadow:var(--shadow);padding:18px 16px;cursor:pointer;font-family:inherit;
+  transition:border-color .14s, transform .14s;
+}
+.homecard:hover{border-color:var(--pine);transform:translateY(-1px)}
+.homecard .ico{
+  width:46px;height:46px;border-radius:14px;flex-shrink:0;
+  background:var(--pine-soft);color:var(--pine);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Jua','NanumSquareRound',sans-serif;font-size:19px;
+}
+.homecard.on2 .ico{background:#FBEDE4;color:var(--flag)}
+.homecard b{display:block;font-size:16px;color:var(--ink);margin-bottom:3px;font-weight:800}
+.homecard span{display:block;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+.homecard .arrow{margin-left:auto;color:var(--ink-3);font-size:18px;flex-shrink:0}
+.homenote{
+  margin-top:18px;padding:14px 16px;background:#fff;border:1px solid var(--rule);
+  border-radius:14px;font-size:12px;color:var(--ink-3);line-height:1.65;
+}
+.homenote b{color:var(--ink-2)}
 
 /* ---------- layout ---------- */
 .grid{display:grid;grid-template-columns:1fr;gap:18px}
@@ -340,7 +414,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <svg class="sp-icon" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="116" fill="#0F4B3E"/><g fill="#FFFFFF"><polygon points="256,104 442,220 70,220"/><rect x="112" y="198" width="288" height="254" rx="30"/></g><path d="M128 200 L256 132 L384 200" fill="none" stroke="#0F4B3E" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><g fill="#0F4B3E"><circle cx="250" cy="278" r="46"/><path d="M134 440 a116 104 0 0 1 232 0 Z"/></g><circle cx="340" cy="388" r="38" fill="#E8763A"/><g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round"><path d="M324.8 367.1 L333.4 394.7 L340 369.9 L346.7 394.7 L355.2 367.1" stroke-width="6.7"/><path d="M320 380.4 H360" stroke-width="4.8"/><path d="M320 389.9 H360" stroke-width="4.8"/></g></svg>
     <div class="sp-text">
       <div class="sp-title">세금계산기</div>
-      <div class="sp-sub">부동산 양도소득세</div>
+      <div class="sp-sub">양도 · 증여 · 상속</div>
     </div>
   </div>
 </div>
@@ -360,11 +434,52 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </script>
 
 <header>
-  <div class="wrap"><h1>부동산 양도소득세 계산기</h1></div>
+  <div class="wrap hdrow">
+    <button class="menubtn" type="button" id="menuBtn" aria-label="메뉴" style="display:none"><span></span></button>
+    <h1 id="pageTitle">세금계산기</h1>
+  </div>
 </header>
 
+<div id="menuMask"></div>
+<nav id="menu" aria-label="계산기 선택">
+  <div class="mtop"><b>세금계산기</b><button type="button" id="menuClose" aria-label="닫기">✕</button></div>
+  <button class="mitem" type="button" data-go="home"><span class="dot"></span>홈<small>계산기 목록</small></button>
+  <button class="mitem" type="button" data-go="yangdo"><span class="dot"></span>양도소득세<small>부동산</small></button>
+  <button class="mitem" type="button" data-go="gift"><span class="dot"></span>증여세<small>사전증여 합산</small></button>
+  <button class="mitem" type="button" data-go="inherit"><span class="dot"></span>상속세<small>상속공제 반영</small></button>
+</nav>
+
 <div class="wrap">
-<div class="grid">
+
+<!-- ============ 홈 ============ -->
+<section id="scr-home">
+  <div class="homehero">
+    <h2>어떤 세금을 계산할까요</h2>
+    <p>계산 흐름을 단계별로 보여드립니다</p>
+  </div>
+  <div class="homelist">
+    <button class="homecard" type="button" data-go="yangdo">
+      <span class="ico">양도</span>
+      <span><b>부동산 양도소득세</b><span>장기보유특별공제 · 다주택 중과 자동 반영</span></span>
+      <span class="arrow">›</span>
+    </button>
+    <button class="homecard" type="button" data-go="gift">
+      <span class="ico">증여</span>
+      <span><b>증여세</b><span>관계별 증여재산공제 · 10년 합산</span></span>
+      <span class="arrow">›</span>
+    </button>
+    <button class="homecard on2" type="button" data-go="inherit">
+      <span class="ico">상속</span>
+      <span><b>상속세</b><span>일괄 · 배우자 · 금융재산 공제</span></span>
+      <span class="arrow">›</span>
+    </button>
+  </div>
+  <div class="homenote">
+    <b>참고용 계산 도구입니다.</b> 2026년 현행 세법 기준으로 계산하며, 개별 특례와 감면은 모두 반영하지 않습니다. 실제 신고 전에는 세무대리인의 검토를 받으십시오.
+  </div>
+</section>
+
+<div class="grid" id="scr-yangdo" style="display:none">
 
 <!-- ============ 입력 ============ -->
 <div>
@@ -537,6 +652,227 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </div>
 
 </div>
+
+<!-- ============ 증여세 ============ -->
+<div class="grid" id="scr-gift" style="display:none">
+<div>
+  <section class="card">
+    <div class="hd"><span class="idx">A</span><h2>증여 내용</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="gAmt">① 증여재산가액 <span class="req">*</span></label>
+        <div class="unit"><input type="text" id="gAmt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="gAmtK"></div>
+        <div class="quick" data-target="gAmt">
+          <button type="button" data-add="1000000">+100만</button>
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lb" for="gPrior">② 10년 내 동일인 증여재산 <button class="help" id="gPriorHelp" type="button" aria-label="설명 보기">?</button></label>
+        <div class="unit"><input type="text" id="gPrior" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="gPriorK"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="gDebt">③ 수증자가 인수한 채무 <span style="font-weight:400;color:var(--ink-3)">부담부증여</span></label>
+        <div class="unit"><input type="text" id="gDebt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="gDebtK"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">B</span><h2>증여자와의 관계</h2><span class="note">10년 합산 한도</span></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="gRel">관계 <button class="help" id="gDedHelp" type="button" aria-label="증여재산공제 설명">?</button></label>
+        <select id="gRel">
+          <option value="spouse">배우자 — 6억원</option>
+          <option value="linealAdult" selected>직계존속 → 성년 자녀 · 손자녀 — 5천만원</option>
+          <option value="linealMinor">직계존속 → 미성년 자녀 · 손자녀 — 2천만원</option>
+          <option value="descendant">직계비속 → 부모 · 조부모 — 5천만원</option>
+          <option value="relative">기타 친족 — 1천만원</option>
+          <option value="other">그 밖의 관계 — 공제 없음</option>
+        </select>
+      </div>
+      <div class="field" id="gMarryWrap">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="gMarry">
+          <span>혼인 · 출산 증여재산공제 적용 <b>1억원</b><em>직계존속에게 받은 재산으로, 혼인신고 전후 2년 또는 출생 · 입양일부터 2년 이내</em></span></label>
+      </div>
+      <div class="field" id="gSkipWrap">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="gSkip">
+          <span>세대를 건너뛴 증여 <em>조부모가 손자녀에게 주는 경우. 산출세액의 30%가 할증되고, 미성년자에게 20억원을 넘겨 주면 40%입니다</em></span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">C</span><h2>세액공제</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="gPaid">이미 낸 증여세액 <span style="font-weight:400;color:var(--ink-3)">사전증여분</span></label>
+        <div class="unit"><input type="text" id="gPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="gPaidK"></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="gReport" checked>
+          <span>신고기한 안에 신고 <b>3% 공제</b><em>증여일이 속한 달의 말일부터 3개월 이내</em></span></label>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="button" id="gReset">입력 초기화</button>
+    <button class="btn pri" type="button" id="gCalc">계산하기</button>
+  </div>
+</div>
+
+<div class="ledger-col">
+  <section class="card ledger">
+    <div class="hd"><span class="idx">계산</span><h2>세액 계산 흐름</h2><span class="note" id="gDateNote"></span></div>
+    <div class="stale" id="gStale" style="display:none">입력이 바뀌었습니다. <b>계산하기</b>를 다시 눌러 주세요.</div>
+    <div id="gBadges" class="badges" style="display:none"></div>
+    <div class="bd" id="gOut">
+      <div class="empty"><b>증여재산가액을 입력하세요</b>금액과 관계를 고른 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.</div>
+    </div>
+    <div class="foot" id="gFoot" style="display:none"></div>
+    <div class="pdfbar" id="gPdfbar" style="display:none">
+      <button class="pdfbtn" type="button" data-save="pdf">PDF로 저장</button>
+      <button class="pdfbtn alt" type="button" data-save="png">이미지로 저장</button>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- ============ 상속세 ============ -->
+<div class="grid" id="scr-inherit" style="display:none">
+<div>
+  <section class="card">
+    <div class="hd"><span class="idx">A</span><h2>상속재산</h2><span class="note">상속개시일 시가</span></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="sAsset">① 총 상속재산가액 <span class="req">*</span></label>
+        <div class="unit"><input type="text" id="sAsset" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sAssetK"></div>
+        <div class="quick" data-target="sAsset">
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" data-add="5000000000">+50억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lb" for="sPrior">② 사전증여재산 <button class="help" id="sPriorHelp" type="button" aria-label="설명 보기">?</button></label>
+        <div class="unit"><input type="text" id="sPrior" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sPriorK"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="sDebt">③ 채무 · 공과금</label>
+        <div class="unit"><input type="text" id="sDebt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sDebtK"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="sFuneral">④ 장례비용 <span style="font-weight:400;color:var(--ink-3)">500만 ~ 1,000만원</span></label>
+        <div class="unit"><input type="text" id="sFuneral" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sFuneralK"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">B</span><h2>상속인</h2><span class="note">공제액을 좌우합니다</span></div>
+    <div class="bd">
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sSpouse" checked>
+          <span>배우자가 생존해 있음<em>최소 5억원, 법정상속분 한도 내 최대 30억원까지 공제됩니다</em></span></label>
+      </div>
+      <div class="field" id="sSpouseAmtWrap">
+        <label class="lb" for="sSpouseAmt">배우자가 실제 상속받는 금액</label>
+        <div class="unit"><input type="text" id="sSpouseAmt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sSpouseAmtK"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="sChild">자녀 수 <button class="help" id="sDedHelp" type="button" aria-label="상속공제 설명">?</button></label>
+        <div class="seg" id="sChildSeg">
+          <button type="button" data-v="0" aria-pressed="false">없음</button>
+          <button type="button" data-v="1" aria-pressed="false">1명</button>
+          <button type="button" data-v="2" aria-pressed="true">2명</button>
+          <button type="button" data-v="3" aria-pressed="false">3명</button>
+          <button type="button" data-v="4" aria-pressed="false">4명</button>
+          <button type="button" data-v="5" aria-pressed="false">5명 이상</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">C</span><h2>추가 공제</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="sFin">순금융재산가액 <span style="font-weight:400;color:var(--ink-3)">예금 · 주식 − 금융채무</span></label>
+        <div class="unit"><input type="text" id="sFin" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sFinK"></div>
+      </div>
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sHome">
+          <span>동거주택 상속공제 요건 충족<em>10년 이상 동거한 무주택 상속인이 주택을 상속받는 경우, 최대 6억원</em></span></label>
+      </div>
+      <div class="field" id="sHomeAmtWrap" style="display:none">
+        <label class="lb" for="sHomeAmt">상속받는 주택가액 <span style="font-weight:400;color:var(--ink-3)">담보채무 차감 후</span></label>
+        <div class="unit"><input type="text" id="sHomeAmt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sHomeAmtK"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">D</span><h2>할증 · 세액공제</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sSkip">
+          <span>세대를 건너뛴 상속<em>손자녀가 상속받는 경우 산출세액의 30%가 할증됩니다</em></span></label>
+      </div>
+      <div class="field">
+        <label class="lb" for="sPaid">증여세액공제 <span style="font-weight:400;color:var(--ink-3)">사전증여분 기납부세액</span></label>
+        <div class="unit"><input type="text" id="sPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sPaidK"></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sReport" checked>
+          <span>신고기한 안에 신고 <b>3% 공제</b><em>상속개시일이 속한 달의 말일부터 6개월 이내</em></span></label>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="button" id="sReset">입력 초기화</button>
+    <button class="btn pri" type="button" id="sCalc">계산하기</button>
+  </div>
+</div>
+
+<div class="ledger-col">
+  <section class="card ledger">
+    <div class="hd"><span class="idx">계산</span><h2>세액 계산 흐름</h2><span class="note" id="sDateNote"></span></div>
+    <div class="stale" id="sStale" style="display:none">입력이 바뀌었습니다. <b>계산하기</b>를 다시 눌러 주세요.</div>
+    <div id="sBadges" class="badges" style="display:none"></div>
+    <div class="bd" id="sOut">
+      <div class="empty"><b>상속재산가액을 입력하세요</b>재산과 상속인을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.</div>
+    </div>
+    <div class="foot" id="sFoot" style="display:none"></div>
+    <div class="pdfbar" id="sPdfbar" style="display:none">
+      <button class="pdfbtn" type="button" data-save="pdf">PDF로 저장</button>
+      <button class="pdfbtn alt" type="button" data-save="png">이미지로 저장</button>
+    </div>
+  </section>
+</div>
+</div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -578,6 +914,119 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>세금계산서 · 계산서 · 신용카드매출전표 · 현금영수증 같은 적격증빙을 갖추거나, 실제 지출사실이 <b>금융거래 증명서류</b>로 확인되면 인정됩니다. 현금으로 주고 영수증만 있고 계좌이체 내역이 없으면 부인될 위험이 큽니다.</p>
       <div class="callout"><p><b>환산취득가액을 쓰는 경우는 다릅니다.</b> 자본적지출과 양도비를 실액으로 공제할 수 없고, 취득 당시 기준시가에 3%(미등기 0.3%)를 곱한 개산공제만 적용됩니다.</p>
       <p>다만 실제 확인되는 필요경비 합계가 개산공제액보다 크면 실액을 선택할 수 있으므로, 두 방식을 모두 계산해 유리한 쪽을 택하세요.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 상속·증여 세율 모달 ============ -->
+<div class="mask" id="gsrateMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gsrTitle">
+    <div class="mhd"><h3 id="gsrTitle">상속세 · 증여세 세율</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>상속세와 증여세는 <b>같은 세율표</b>를 씁니다. 과세표준 구간마다 세율이 올라가는 누진 구조이고, 계산식은 <b>과세표준 × 세율 − 누진공제</b>입니다.</p>
+      <table class="mtable">
+        <tr><th>과세표준</th><th>세율</th><th>누진공제</th></tr>
+        <tr><td>1억원 이하</td><td>10%</td><td>—</td></tr>
+        <tr><td>5억원 이하</td><td>20%</td><td>1,000만원</td></tr>
+        <tr><td>10억원 이하</td><td>30%</td><td>6,000만원</td></tr>
+        <tr><td>30억원 이하</td><td>40%</td><td>1억 6,000만원</td></tr>
+        <tr><td>30억원 초과</td><td>50%</td><td>4억 6,000만원</td></tr>
+      </table>
+      <h4>세대생략 할증</h4>
+      <p>조부모가 손자녀에게 바로 물려주면 한 세대분의 세금을 건너뛰게 되므로 <b>산출세액의 30%</b>를 더 매깁니다. 증여에서 수증자가 미성년자이고 증여재산이 20억원을 넘으면 40%입니다.</p>
+      <h4>신고세액공제 3%</h4>
+      <p>신고기한 안에 신고하면 산출세액에서 세액공제를 뺀 금액의 3%를 깎아 줍니다. 증여는 3개월, 상속은 6개월이 기한입니다. 놓치면 3%를 잃는 데 그치지 않고 무신고가산세 20%가 따로 붙습니다.</p>
+      <div class="callout"><p><b>2024년 개정안은 시행되지 않았습니다.</b> 자녀공제를 5억원으로 올리고 최고세율을 40%로 낮추는 안이 발의됐으나 국회에서 부결되어, 현행 자녀공제 5천만원과 최고세율 50%가 그대로 적용됩니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 증여재산공제 모달 ============ -->
+<div class="mask" id="gdedMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gdTitle">
+    <div class="mhd"><h3 id="gdTitle">증여재산공제</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>가까운 사이의 증여에는 일정 금액까지 세금을 매기지 않습니다. 관계에 따라 한도가 다르고, 모두 <b>10년 합산 한도</b>입니다.</p>
+      <table class="mtable">
+        <tr><th>관계</th><th>공제 한도</th></tr>
+        <tr><td>배우자</td><td>6억원</td></tr>
+        <tr><td>직계존속 → 성년 자녀 · 손자녀</td><td>5,000만원</td></tr>
+        <tr><td>직계존속 → 미성년 자녀 · 손자녀</td><td>2,000만원</td></tr>
+        <tr><td>직계비속 → 부모 · 조부모</td><td>5,000만원</td></tr>
+        <tr><td>기타 친족<br><span style="color:#78868F">6촌 이내 혈족 · 4촌 이내 인척</span></td><td>1,000만원</td></tr>
+        <tr><td>그 밖의 관계</td><td>공제 없음</td></tr>
+      </table>
+      <div class="callout"><p><b>10년이 기준입니다.</b> 5년 전에 아버지에게 5,000만원을 받아 공제를 다 썼다면 지금은 공제가 0원입니다. 10년이 지나야 한도가 되살아납니다.</p>
+      <p>아버지와 어머니는 <b>같은 사람으로 봅니다.</b> 직계존속은 그 배우자를 포함해 한 명으로 묶여, 부모에게 각각 5,000만원씩 받아도 공제는 합쳐서 5,000만원입니다. 반면 할아버지는 별도 한도가 아니라 역시 직계존속으로 합산됩니다.</p></div>
+      <h4>혼인 · 출산 증여재산공제 — 1억원</h4>
+      <p>직계존속에게 받은 재산에 한해 일반 공제와 <b>별도로</b> 1억원을 더 공제합니다. 혼인신고일 전후 2년(총 4년) 이내이거나, 자녀의 출생일 또는 입양신고일부터 2년 이내여야 합니다.</p>
+      <p>혼인과 출산을 모두 겪어도 <b>합쳐서 1억원</b>이 한도이고, 평생 한 번만 쓸 수 있습니다. 성년 자녀라면 기본 5,000만원과 합해 1억 5,000만원까지 세금 없이 받을 수 있습니다.</p>
+      <div class="callout"><p><b>부부가 각자 받으면 3억원입니다.</b> 신랑이 본인 부모에게 1억 5,000만원, 신부가 본인 부모에게 1억 5,000만원을 받으면 합계 3억원까지 증여세가 없습니다. 상담에서 자주 나오는 설계입니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 상속공제 모달 ============ -->
+<div class="mask" id="sdedMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sdTitle">
+    <div class="mhd"><h3 id="sdTitle">상속공제</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>상속세는 재산이 얼마인지보다 <b>공제를 얼마나 받느냐</b>가 세금을 좌우합니다. 배우자와 자녀가 함께 상속받는 일반적인 경우 약 10억원까지는 세금이 나오지 않습니다.</p>
+
+      <h4>일괄공제 — 5억원</h4>
+      <p>기초공제 2억원에 인적공제를 더한 금액과 <b>일괄공제 5억원</b> 중 큰 쪽을 고릅니다. 자녀공제가 1인당 5,000만원뿐이라 자녀가 여섯 명은 넘어야 인적공제가 유리해지므로, 실무에서는 대부분 일괄공제를 씁니다.</p>
+      <div class="callout"><p><b>배우자 단독상속은 예외입니다.</b> 자녀가 없어 배우자가 혼자 상속받으면 일괄공제를 쓸 수 없고 기초공제 2억원만 적용됩니다. 대신 배우자의 법정상속분이 100%가 되어 배우자공제가 최대 30억원까지 늘어납니다.</p></div>
+
+      <h4>배우자상속공제 — 5억 ~ 30억원</h4>
+      <p>배우자가 살아 있으면 실제로 상속받은 금액이 없거나 5억원에 못 미쳐도 <b>5억원</b>을 공제합니다. 5억원 이상 상속받으면 실제 상속액을 공제하되, 법정상속분과 30억원이 한도입니다.</p>
+      <p>배우자의 법정상속분은 자녀 1인을 1로 볼 때 <b>1.5</b>입니다. 자녀가 둘이면 1.5 ÷ 3.5 = 약 43%입니다.</p>
+      <div class="callout"><p><b>양날의 검입니다.</b> 배우자 몫을 늘리면 이번 상속세는 줄지만, 그 재산은 배우자가 사망할 때 다시 상속세 대상이 됩니다. 배우자의 나이와 재산 규모를 함께 놓고 2차 상속까지 계산해야 합니다.</p></div>
+
+      <h4>금융재산 상속공제 — 최대 2억원</h4>
+      <p>부동산과 달리 금융재산은 시가가 그대로 드러나 불리하다는 점을 감안한 공제입니다. 예금 · 주식 · 보험금 등에서 금융채무를 뺀 <b>순금융재산</b>을 기준으로 합니다.</p>
+      <table class="mtable">
+        <tr><th>순금융재산</th><th>공제액</th></tr>
+        <tr><td>2,000만원 이하</td><td>전액</td></tr>
+        <tr><td>2,000만원 초과 1억원 이하</td><td>2,000만원</td></tr>
+        <tr><td>1억원 초과</td><td>20% (최대 2억원)</td></tr>
+      </table>
+
+      <h4>동거주택 상속공제 — 최대 6억원</h4>
+      <p>상속개시일까지 <b>10년 이상 계속 동거</b>한 무주택 상속인이 그 주택을 상속받으면 주택가액(담보채무를 뺀 금액)의 전액을 6억원 한도로 공제합니다. 직계비속만 해당되고, 동거 기간에 상속인이 무주택이어야 합니다.</p>
+
+      <p style="color:var(--ink-3);font-size:12.5px">이 계산기는 미성년자공제, 연로자공제, 장애인공제, 가업 · 영농상속공제, 상속공제 종합한도는 반영하지 않습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 사전증여 합산(증여) 모달 ============ -->
+<div class="mask" id="gpriorMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gpTitle">
+    <div class="mhd"><h3 id="gpTitle">10년 내 동일인 증여재산</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>같은 사람에게 10년 안에 여러 번 받으면 <b>합쳐서 한 번에 받은 것처럼</b> 과세합니다. 나눠 주는 방식으로 낮은 세율 구간을 반복해 쓰는 것을 막기 위해서입니다.</p>
+      <p>합산한 금액으로 세금을 다시 계산한 뒤, 앞서 낸 증여세를 <b>기납부세액</b>으로 빼줍니다. 세금을 두 번 내는 것은 아니지만 세율 구간이 올라가 부담이 커집니다.</p>
+      <div class="callout"><p><b>부모는 한 사람으로 봅니다.</b> 직계존속은 그 배우자를 포함해 동일인으로 묶습니다. 5년 전 아버지에게 1억원, 올해 어머니에게 1억원을 받았다면 2억원을 합산해 계산합니다.</p>
+      <p>반면 <b>할아버지는 아버지와 별개</b>입니다. 다만 세대를 건너뛴 증여라 30% 할증이 붙습니다.</p></div>
+      <p>10년이 지난 증여는 합산하지 않습니다. 사전증여 설계에서 10년 주기가 기준이 되는 이유입니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 사전증여 합산(상속) 모달 ============ -->
+<div class="mask" id="spriorMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+    <div class="mhd"><h3 id="spTitle">사전증여재산 합산</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>사망 전에 미리 넘긴 재산도 일정 기간 안의 것이라면 상속재산에 <b>도로 더해서</b> 상속세를 계산합니다.</p>
+      <table class="mtable">
+        <tr><th>받은 사람</th><th>합산 기간</th></tr>
+        <tr><td>상속인 (배우자 · 자녀 등)</td><td>상속개시일 전 10년</td></tr>
+        <tr><td>상속인이 아닌 자 (손자녀 · 며느리 등)</td><td>상속개시일 전 5년</td></tr>
+      </table>
+      <p>합산할 때는 <b>증여 당시의 가액</b>으로 넣습니다. 그 사이 값이 올랐어도 오른 부분은 상속세 대상이 아닙니다. 사전증여가 절세로 이어지는 핵심 이유입니다.</p>
+      <p>이미 낸 증여세는 <b>증여세액공제</b>로 상속세에서 빼줍니다. 아래 입력칸에 넣으시면 반영됩니다.</p>
+      <div class="callout"><p><b>10년을 넘기는 것이 관건입니다.</b> 증여 후 10년이 지나면 합산되지 않고, 그 사이의 가치 상승분까지 통째로 상속재산에서 빠집니다. 자산가 상담에서 증여 시점을 앞당기라고 권하는 근거입니다.</p></div>
     </div>
   </div>
 </div>
@@ -753,6 +1202,32 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 /* ---------------- 상수 ---------------- */
 var HIGH = 1200000000;           // 1세대 1주택 고가주택 기준
 var BASIC_DEDUCT = 2500000;      // 양도소득 기본공제
+var GIFT_BR = [                  // 상속세 · 증여세 공통 세율
+  [100000000,  0.10, 0],
+  [500000000,  0.20, 10000000],
+  [1000000000, 0.30, 60000000],
+  [3000000000, 0.40, 160000000],
+  [Infinity,   0.50, 460000000]
+];
+var GIFT_DED = {
+  spouse:      [600000000, '배우자'],
+  linealAdult: [50000000,  '직계존속 → 성년'],
+  linealMinor: [20000000,  '직계존속 → 미성년'],
+  descendant:  [50000000,  '직계비속 → 존속'],
+  relative:    [10000000,  '기타 친족'],
+  other:       [0,         '그 밖의 관계']
+};
+var MARRY_DED = 100000000;
+
+function gsProgressive(base){
+  for(var i=0;i<GIFT_BR.length;i++){
+    if(base <= GIFT_BR[i][0]){
+      return { tax: Math.max(0, base*GIFT_BR[i][1] - GIFT_BR[i][2]),
+               rate: GIFT_BR[i][1], ded: GIFT_BR[i][2] };
+    }
+  }
+}
+
 var BRACKETS = [                 // [상한, 세율, 누진공제]
   [14000000,   0.06, 0],
   [50000000,   0.15, 1260000],
@@ -839,6 +1314,74 @@ function progressive(base, surcharge){
 
 /* ---------------- 상태 ---------------- */
 var houseCount = 1;
+var childCount = 2;
+
+var SCREENS = {
+  home:    { el:'scr-home',    title:'세금계산기' },
+  yangdo:  { el:'scr-yangdo',  title:'부동산 양도소득세' },
+  gift:    { el:'scr-gift',    title:'증여세' },
+  inherit: { el:'scr-inherit', title:'상속세' }
+};
+var current = 'home';
+
+function go(key){
+  if(!SCREENS[key]) key = 'home';
+  current = key;
+  for(var k in SCREENS){ $(SCREENS[k].el).style.display = (k === key) ? '' : 'none'; }
+  $('pageTitle').textContent = SCREENS[key].title;
+  $('menuBtn').style.display = (key === 'home') ? 'none' : '';
+  Array.prototype.forEach.call(document.querySelectorAll('#menu .mitem'), function(b){
+    b.setAttribute('aria-current', b.getAttribute('data-go') === key ? 'true' : 'false');
+  });
+  closeMenu();
+  window.scrollTo(0, 0);
+}
+function openMenu(){ $('menu').classList.add('on'); $('menuMask').classList.add('on'); }
+function closeMenu(){ $('menu').classList.remove('on'); $('menuMask').classList.remove('on'); }
+
+/* ---------------- 공통 결과 렌더 ---------------- */
+/* rows: [번호, 연산, 이름, 설명, 금액, 클래스, 도움말키] */
+function renderLedger(ids, data){
+  RPT = { rows:[], badges:data.badges||[], notes:data.notes||[],
+          krw:data.krw||'', title:data.title||'', slug:data.slug||'tax' };
+  var h = '';
+  (data.rows||[]).forEach(function(r){
+    RPT.rows.push({ no:r[0]||'', op:r[1]||'', name:r[2], sub:r[3]||'', amt:r[4], cls:r[5]||'' });
+    var help = r[6] ? ' <button class="help" type="button" data-help="'+r[6]+'" aria-label="설명 보기">?</button>' : '';
+    h += '<div class="lrow '+(r[5]||'')+'">'
+       + '<span class="no">'+(r[0]||'')+'</span>'
+       + '<span class="op">'+(r[1]||'')+'</span>'
+       + '<span class="nm">'+r[2]+help+(r[3]?'<i>'+r[3]+'</i>':'')+'</span>'
+       + '<span class="amt">'+r[4]+'</span></div>';
+  });
+  if(data.krw) h += '<div class="krw">'+data.krw+'</div>';
+  $(ids.out).innerHTML = h;
+  $(ids.stale).style.display = 'none';
+  if(RPT.badges.length){
+    $(ids.badges).style.display = 'flex';
+    $(ids.badges).innerHTML = RPT.badges.map(function(b){
+      return '<span class="badge '+b[0]+'">'+b[1]+'</span>'; }).join('');
+  } else { $(ids.badges).style.display = 'none'; }
+  $(ids.foot).style.display = '';
+  $(ids.foot).innerHTML = RPT.notes.map(function(n){ return '· '+n; }).join('<br>');
+  $(ids.pdfbar).style.display = '';
+  $(ids.dateNote).textContent = data.dateNote || '';
+}
+
+function clearLedger(ids, html){
+  $(ids.out).innerHTML = '<div class="empty">'+html+'</div>';
+  $(ids.stale).style.display = 'none';
+  $(ids.badges).style.display = 'none';
+  $(ids.foot).style.display = 'none';
+  $(ids.pdfbar).style.display = 'none';
+  $(ids.dateNote).textContent = '';
+  RPT = { rows:[], badges:[], notes:[], krw:'' };
+}
+
+var G_IDS = { out:'gOut', stale:'gStale', badges:'gBadges', foot:'gFoot', pdfbar:'gPdfbar', dateNote:'gDateNote' };
+var S_IDS = { out:'sOut', stale:'sStale', badges:'sBadges', foot:'sFoot', pdfbar:'sPdfbar', dateNote:'sDateNote' };
+var G_EMPTY = '<b>증여재산가액을 입력하세요</b>금액과 관계를 고른 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.';
+var S_EMPTY = '<b>상속재산가액을 입력하세요</b>재산과 상속인을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.';
 
 /* ---------------- 입력 포맷 ---------------- */
 ['sp','ap','ex','rd'].forEach(function(id){
@@ -972,6 +1515,241 @@ $('resetBtn').addEventListener('click', function(){
   showEmpty('<b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.');
 });
 
+/* ================= 증여세 ================= */
+var G_NUM = ['gAmt','gPrior','gDebt','gPaid'];
+function gHints(){
+  G_NUM.forEach(function(id){ $(id+'K').textContent = korean(num($(id))); });
+  var rel = $('gRel').value;
+  $('gMarryWrap').style.display = (rel === 'linealAdult' || rel === 'linealMinor') ? '' : 'none';
+}
+function gStaleMark(){ if(RPT.rows.length && current === 'gift') $('gStale').style.display = ''; }
+function gInput(){ gHints(); gStaleMark(); }
+
+function gRun(){
+  gHints();
+  var amt = num($('gAmt')), prior = num($('gPrior')), debt = num($('gDebt')), paid = num($('gPaid'));
+  if(!amt){ clearLedger(G_IDS, G_EMPTY); toast('증여재산가액을 입력하세요'); $('gAmt').focus(); return; }
+
+  var rel = $('gRel').value;
+  var relDed = GIFT_DED[rel][0], relName = GIFT_DED[rel][1];
+  var marry = ($('gMarry').checked && (rel === 'linealAdult' || rel === 'linealMinor')) ? MARRY_DED : 0;
+  var skip = $('gSkip').checked;
+  var rows = [], badges = [], notes = [];
+
+  var base1 = amt + prior - Math.min(debt, amt);
+  var taxable = Math.max(0, base1);
+  var ded = Math.min(relDed + marry, taxable);
+  var taxBase = Math.max(0, taxable - ded);
+  var pr = gsProgressive(taxBase);
+  var calc = taxBase > 0 ? pr.tax : 0;
+
+  var surRate = 0;
+  if(skip){ surRate = (rel === 'linealMinor' && amt > 2000000000) ? 0.40 : 0.30; }
+  var sur = calc * surRate;
+  var gross = calc + sur;
+
+  var paidCredit = Math.min(paid, gross);
+  var afterCredit = Math.max(0, gross - paidCredit);
+  var reportCredit = $('gReport').checked ? Math.floor(afterCredit * 0.03) : 0;
+  var payable = Math.max(0, afterCredit - reportCredit);
+
+  rows.push(['①','','증여재산가액','', won(amt)]);
+  if(prior) rows.push(['②','+','10년 내 동일인 증여재산','재차증여 합산', won(prior)]);
+  if(debt)  rows.push(['③','−','인수 채무액','부담부증여', won(Math.min(debt, amt))]);
+  rows.push(['','','증여세 과세가액','', won(taxable), 'sum']);
+  rows.push(['④','−','증여재산공제',
+    relName + ' ' + comma(relDed) + '원' + (marry ? ' + 혼인·출산 ' + comma(marry) + '원' : ''),
+    won(ded), ded?'':'muted', 'gded']);
+  rows.push(['','','과세표준','', won(taxBase), 'sum']);
+  rows.push(['⑤','×','세율',
+    taxBase > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음',
+    '', 'muted', 'gsrate']);
+  rows.push(['','','산출세액','', won(calc), 'sum']);
+  if(sur) rows.push(['⑥','+','세대생략 할증', '산출세액의 ' + Math.round(surRate*100) + '%', won(sur)]);
+  if(paidCredit) rows.push(['⑦','−','기납부 증여세액공제','사전증여분', won(paidCredit)]);
+  if(reportCredit) rows.push(['⑧','−','신고세액공제','기한 내 신고 3%', won(reportCredit)]);
+  rows.push(['','','납부할 세액','', won(payable), 'final']);
+
+  if(ded) badges.push(['','증여재산공제 ' + comma(ded) + '원']);
+  if(surRate) badges.push(['warn','세대생략 할증 ' + Math.round(surRate*100) + '%']);
+  if(taxBase === 0) badges.push(['','공제 범위 내 · 납부세액 없음']);
+
+  notes.push('<b>신고기한</b> 증여일이 속한 달의 말일부터 3개월 이내. 기한 내 신고하면 3%를 공제받습니다.');
+  notes.push('증여재산공제는 <b>10년 합산 한도</b>입니다. 같은 관계에서 10년 안에 이미 공제를 받았다면 남은 한도만 적용됩니다.');
+  if(debt) notes.push('부담부증여로 넘긴 채무액은 증여자에게 <b>양도소득세</b>가 별도로 과세됩니다. 양도소득세 계산기로 따로 확인하십시오.');
+  if(prior) notes.push('10년 내 동일인(직계존속은 배우자 포함)에게 받은 증여재산은 합산해 과세하고, 이미 낸 세액을 공제합니다.');
+  notes.push('단순 참고용 계산입니다. 가업승계 과세특례, 창업자금 특례, 재해손실공제 등은 반영하지 않았습니다.');
+
+  renderLedger(G_IDS, { rows:rows, badges:badges, notes:notes,
+    krw: korean(payable) || '0원', title:'증여세 계산 결과', slug:'gift-tax' });
+}
+
+/* ================= 상속세 ================= */
+var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid'];
+function sHints(){
+  S_NUM.forEach(function(id){ $(id+'K').textContent = korean(num($(id))); });
+  $('sSpouseAmtWrap').style.display = $('sSpouse').checked ? '' : 'none';
+  $('sHomeAmtWrap').style.display = $('sHome').checked ? '' : 'none';
+}
+function sStaleMark(){ if(RPT.rows.length && current === 'inherit') $('sStale').style.display = ''; }
+function sInput(){ sHints(); sStaleMark(); }
+
+function sRun(){
+  sHints();
+  var asset = num($('sAsset')), prior = num($('sPrior')), debt = num($('sDebt'));
+  var funeralIn = num($('sFuneral')), fin = num($('sFin')), paid = num($('sPaid'));
+  if(!asset){ clearLedger(S_IDS, S_EMPTY); toast('총 상속재산가액을 입력하세요'); $('sAsset').focus(); return; }
+
+  var hasSpouse = $('sSpouse').checked;
+  var spouseGet = hasSpouse ? num($('sSpouseAmt')) : 0;
+  var rows = [], badges = [], notes = [];
+
+  var funeral = funeralIn ? Math.min(Math.max(funeralIn, 5000000), 10000000) : 0;
+  var taxable = Math.max(0, asset + prior - debt - funeral);
+
+  /* 기초 + 인적공제 vs 일괄공제 */
+  var lump, lumpLabel;
+  var personal = 200000000 + childCount * 50000000;
+  if(hasSpouse && childCount === 0){
+    lump = personal; lumpLabel = '기초공제 2억원 · 배우자 단독상속은 일괄공제 배제';
+  } else if(personal > 500000000){
+    lump = personal; lumpLabel = '기초공제 2억원 + 자녀공제 ' + childCount + '명 × 5천만원';
+  } else {
+    lump = 500000000; lumpLabel = '일괄공제 (기초 + 인적공제보다 유리)';
+  }
+
+  /* 배우자상속공제 */
+  var spouseDed = 0, spouseLabel = '';
+  if(hasSpouse){
+    var share = childCount > 0 ? 1.5 / (1.5 + childCount) : 1;
+    var limit = Math.min(taxable * share, 3000000000);
+    if(spouseGet < 500000000){
+      spouseDed = 500000000; spouseLabel = '실제 상속액 5억원 미만 — 최소 5억원 공제';
+    } else {
+      spouseDed = Math.min(spouseGet, Math.max(limit, 500000000));
+      spouseLabel = '법정상속분 한도 ' + comma(Math.round(limit)) + '원 · 최대 30억원';
+    }
+  }
+
+  /* 금융재산 상속공제 */
+  var finDed = 0;
+  if(fin > 0){
+    if(fin <= 20000000) finDed = fin;
+    else if(fin <= 100000000) finDed = 20000000;
+    else finDed = Math.min(fin * 0.2, 200000000);
+  }
+
+  /* 동거주택 상속공제 */
+  var homeDed = $('sHome').checked ? Math.min(num($('sHomeAmt')), 600000000) : 0;
+
+  var dedTotal = Math.min(lump + spouseDed + finDed + homeDed, taxable);
+  var taxBase = Math.max(0, taxable - dedTotal);
+  var pr = gsProgressive(taxBase);
+  var calc = taxBase > 0 ? pr.tax : 0;
+
+  var surRate = $('sSkip').checked ? 0.30 : 0;
+  var sur = calc * surRate;
+  var gross = calc + sur;
+  var paidCredit = Math.min(paid, gross);
+  var afterCredit = Math.max(0, gross - paidCredit);
+  var reportCredit = $('sReport').checked ? Math.floor(afterCredit * 0.03) : 0;
+  var payable = Math.max(0, afterCredit - reportCredit);
+
+  rows.push(['①','','총 상속재산가액','상속개시일 시가', won(asset)]);
+  if(prior) rows.push(['②','+','사전증여재산','상속인 10년 · 그 외 5년', won(prior)]);
+  if(debt)  rows.push(['③','−','채무 · 공과금','', won(debt)]);
+  if(funeral) rows.push(['④','−','장례비용','500만 ~ 1,000만원 한도', won(funeral)]);
+  rows.push(['','','상속세 과세가액','', won(taxable), 'sum']);
+  rows.push(['⑤','−','일괄공제 · 인적공제', lumpLabel, won(lump), '', 'sded']);
+  if(hasSpouse) rows.push(['⑥','−','배우자상속공제', spouseLabel, won(spouseDed)]);
+  if(finDed)  rows.push(['⑦','−','금융재산 상속공제','순금융재산의 20% · 최대 2억원', won(finDed)]);
+  if(homeDed) rows.push(['⑧','−','동거주택 상속공제','최대 6억원', won(homeDed)]);
+  rows.push(['','','과세표준','', won(taxBase), 'sum']);
+  rows.push(['','×','세율',
+    taxBase > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음',
+    '', 'muted', 'gsrate']);
+  rows.push(['','','산출세액','', won(calc), 'sum']);
+  if(sur) rows.push(['','+','세대생략 할증','산출세액의 30%', won(sur)]);
+  if(paidCredit) rows.push(['','−','증여세액공제','사전증여분 기납부세액', won(paidCredit)]);
+  if(reportCredit) rows.push(['','−','신고세액공제','기한 내 신고 3%', won(reportCredit)]);
+  rows.push(['','','납부할 세액','', won(payable), 'final']);
+
+  badges.push(['','상속공제 합계 ' + comma(dedTotal) + '원']);
+  if(surRate) badges.push(['warn','세대생략 할증 30%']);
+  if(taxBase === 0) badges.push(['','공제 범위 내 · 납부세액 없음']);
+
+  notes.push('<b>신고기한</b> 상속개시일이 속한 달의 말일부터 6개월 이내. 기한 내 신고하면 3%를 공제받습니다.');
+  notes.push('배우자상속공제는 <b>실제 상속받은 금액</b>을 기준으로 합니다. 협의분할로 배우자 몫을 늘리면 공제도 커지지만, 다음 상속에서 다시 과세되므로 함께 검토해야 합니다.');
+  if(hasSpouse && childCount === 0) notes.push('배우자가 단독으로 상속받는 경우 <b>일괄공제 5억원을 적용할 수 없습니다.</b> 기초공제 2억원과 인적공제만 적용됩니다.');
+  if(prior) notes.push('사전증여재산은 상속인은 10년, 상속인이 아닌 자는 5년 이내분을 합산합니다.');
+  notes.push('단순 참고용 계산입니다. 가업상속공제, 영농상속공제, 미성년자 · 장애인 · 연로자 공제, 상속공제 종합한도는 반영하지 않았습니다.');
+
+  renderLedger(S_IDS, { rows:rows, badges:badges, notes:notes,
+    krw: korean(payable) || '0원', title:'상속세 계산 결과', slug:'inherit-tax' });
+}
+
+/* ---------------- 새 화면 이벤트 ---------------- */
+G_NUM.concat(S_NUM).forEach(function(id){
+  var el = $(id);
+  el.addEventListener('input', function(){
+    var raw = digits(el.value);
+    if(raw.length > 15) raw = raw.slice(0,15);
+    el.value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+    if(G_NUM.indexOf(id) >= 0) gInput(); else sInput();
+  });
+});
+['gRel','gMarry','gSkip','gReport'].forEach(function(id){ $(id).addEventListener('change', gInput); });
+['sSpouse','sHome','sSkip','sReport'].forEach(function(id){ $(id).addEventListener('change', sInput); });
+Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true');
+    childCount = parseInt(b.getAttribute('data-v'),10);
+    sInput();
+  });
+});
+$('gCalc').addEventListener('click', function(){ gRun(); if(window.innerWidth < 940) document.querySelector('#scr-gift .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
+$('sCalc').addEventListener('click', function(){ sRun(); if(window.innerWidth < 940) document.querySelector('#scr-inherit .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
+$('gReset').addEventListener('click', function(){
+  G_NUM.forEach(function(id){ $(id).value=''; });
+  $('gRel').value='linealAdult'; $('gMarry').checked=false; $('gSkip').checked=false; $('gReport').checked=true;
+  gHints(); clearLedger(G_IDS, G_EMPTY);
+});
+$('sReset').addEventListener('click', function(){
+  S_NUM.forEach(function(id){ $(id).value=''; });
+  $('sSpouse').checked=true; $('sHome').checked=false; $('sSkip').checked=false; $('sReport').checked=true;
+  childCount=2;
+  Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', x.getAttribute('data-v')==='2' ? 'true':'false'); });
+  sHints(); clearLedger(S_IDS, S_EMPTY);
+});
+['gOut','sOut'].forEach(function(id){
+  $(id).addEventListener('click', function(e){
+    var b = e.target;
+    while(b && b !== this && !b.getAttribute) b = b.parentNode;
+    if(!b || !b.getAttribute || !b.getAttribute('data-help')) return;
+    var m = $(b.getAttribute('data-help') + 'Mask');
+    if(m) openModal(m);
+  });
+});
+$('gPriorHelp').addEventListener('click', function(){ openModal($('gpriorMask')); });
+$('sPriorHelp').addEventListener('click', function(){ openModal($('spriorMask')); });
+$('gDedHelp').addEventListener('click', function(){ openModal($('gdedMask')); });
+$('sDedHelp').addEventListener('click', function(){ openModal($('sdedMask')); });
+
+/* 화면 이동 */
+Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function(b){
+  b.addEventListener('click', function(){ go(b.getAttribute('data-go')); });
+});
+$('menuBtn').addEventListener('click', openMenu);
+$('menuClose').addEventListener('click', closeMenu);
+$('menuMask').addEventListener('click', closeMenu);
+
+/* 증여·상속 저장 버튼 */
+Array.prototype.forEach.call(document.querySelectorAll('[data-save]'), function(b){
+  b.addEventListener('click', function(){ saveAs(b.getAttribute('data-save'), b); });
+});
+
 /* ---------------- PDF 생성 (외부 라이브러리 없음) ---------------- */
 
 function stripTags(x){ return String(x).replace(/<[^>]*>/g,''); }
@@ -1034,10 +1812,10 @@ function drawReport(stamp){
   /* 머리글 */
   yy += 46;
   c.fillStyle = '#1B6B5A'; c.font = '800 19px '+RD;
-  c.fillText('양도소득세 계산서', PAD, yy);
+  c.fillText('세금 계산서', PAD, yy);
   yy += 46;
   c.fillStyle = '#12212E'; c.font = '400 40px '+JU;
-  c.fillText('부동산 양도소득세 계산 결과', PAD, yy);
+  c.fillText(RPT.title || '부동산 양도소득세 계산 결과', PAD, yy);
   yy += 32;
   c.fillStyle = '#78868F'; c.font = '400 20px '+RD;
   c.fillText('작성일 ' + stamp + '  ·  참고용 산출 자료', PAD, yy);
@@ -1197,10 +1975,10 @@ function download(dataUrl, filename){
   setTimeout(function(){ try{ document.body.removeChild(a); }catch(e){} }, 2000);
 }
 
-function saveAs(kind){
+function saveAs(kind, btnEl){
   var isPdf = (kind === 'pdf');
-  var btn   = isPdf ? $('pdfBtn') : $('imgBtn');
-  var label = isPdf ? $('pdfLabel') : $('imgLabel');
+  var btn   = btnEl || (isPdf ? $('pdfBtn') : $('imgBtn'));
+  var label = btnEl ? btnEl : (isPdf ? $('pdfLabel') : $('imgLabel'));
   var text  = isPdf ? 'PDF로 저장' : '이미지로 저장';
   if(!RPT.rows.length){ toast('먼저 계산을 실행하세요'); return; }
   btn.disabled = true; label.textContent = '저장 중…';
@@ -1209,7 +1987,7 @@ function saveAs(kind){
     try{
       var now = new Date();
       var stamp = now.getFullYear()+'.'+('0'+(now.getMonth()+1)).slice(-2)+'.'+('0'+now.getDate()).slice(-2);
-      var name  = 'yangdo-tax-' + stamp.replace(/\./g,'');
+      var name  = (RPT.slug || 'tax') + '-' + stamp.replace(/\./g,'');
       var cv = drawReport(stamp);
 
       if(isPdf){
@@ -1416,7 +2194,7 @@ function run(){
   $('dateNote').textContent = '만 '+holdY+'년 보유';
 
   /* 렌더 */
-  RPT = { rows:[], badges:[], notes:[], krw:'' };
+  RPT = { rows:[], badges:[], notes:[], krw:'', title:'부동산 양도소득세 계산 결과', slug:'yangdo-tax' };
   var h = '';
   h += row('①','','양도가액','실지거래가액', won(sp), '');
   h += row('②','−','취득가액','', won(ap), '');
@@ -1463,7 +2241,7 @@ function run(){
 
 /* 비과세 전용 렌더 */
 function renderExempt(gain, sp, holdY, liveY, badges, acq, sal){
-  RPT = { rows:[], badges:[], notes:[], krw:'0원' };
+  RPT = { rows:[], badges:[], notes:[], krw:'0원', title:'부동산 양도소득세 계산 결과', slug:'yangdo-tax' };
   var h = '';
   h += row('①','','양도가액','실지거래가액', won(sp), '');
   h += row('②','−','취득가액','', won(num($('ap'))), '');
@@ -1518,6 +2296,9 @@ try{
 
 syncVisibility();
 refreshHints();
+gHints();
+sHints();
+go('home');
 })();
 </script>
 </body>
