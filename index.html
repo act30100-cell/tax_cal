@@ -213,6 +213,7 @@ input[type=date]{min-height:44px}
 input[type=text]{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.01em}
 input:focus,select:focus{outline:none;border-color:var(--pine);box-shadow:0 0 0 3px var(--pine-soft)}
 input::placeholder{color:#B8C0C4;font-weight:400}
+input[readonly]{background:#F3F6F3;color:var(--ink-2);border-style:dashed}
 select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%2378868F' stroke-width='1.6' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
 .hint{font-size:11.5px;color:var(--pine);margin-top:5px;text-align:right;min-height:16px;font-weight:700}
 .quick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
@@ -333,6 +334,12 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .pdfbtn.alt{background:#fff;color:var(--ink-2);border:1px solid var(--rule)}
 .pdfbtn.alt:hover{border-color:var(--pine);color:var(--pine);background:#fff}
 .pdfbtn svg{width:15px;height:15px;flex-shrink:0}
+.modal.confirm{max-width:330px;border-radius:22px;text-align:center}
+@media(min-width:640px){.modal.confirm{border-radius:22px}}
+.cf{padding:26px 22px 20px}
+.cf b{display:block;font-family:'Jua','NanumSquareRound',sans-serif;font-weight:400;font-size:19px;margin-bottom:8px}
+.cf p{margin:0 0 20px;font-size:13px;color:var(--ink-3);line-height:1.6}
+.cfbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .toast{
   position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);
   background:var(--ink);color:#fff;padding:11px 18px;border-radius:13px;
@@ -676,6 +683,15 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <label class="lb" for="gPrior">② 10년 내 동일인 증여재산 <button class="help" id="gPriorHelp" type="button" aria-label="설명 보기">?</button></label>
         <div class="unit"><input type="text" id="gPrior" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="gPriorK"></div>
+        <div class="quick" data-target="gPrior">
+          <button type="button" data-add="1000000">+100만</button>
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+
       </div>
       <div class="field">
         <label class="lb" for="gDebt">③ 수증자가 인수한 채무 <span style="font-weight:400;color:var(--ink-3)">부담부증여</span></label>
@@ -714,8 +730,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <div class="hd"><span class="idx">C</span><h2>세액공제</h2></div>
     <div class="bd">
       <div class="field">
-        <label class="lb" for="gPaid">이미 낸 증여세액 <span style="font-weight:400;color:var(--ink-3)">사전증여분</span></label>
-        <div class="unit"><input type="text" id="gPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <label class="lb" for="gPaid">사전증여분 증여세 산출세액 <button class="help" id="gCreditHelp" type="button" aria-label="설명 보기">?</button></label>
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="gAuto" checked>
+          <span>위에 넣은 <b>10년 내 증여재산</b>으로 자동 계산<em>그 증여가 같은 관계에서 10년 내 첫 증여였다고 보고 계산합니다. 다르면 체크를 풀고 직접 넣으세요</em></span></label>
+        <div class="unit" style="margin-top:8px"><input type="text" id="gPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="gPaidK"></div>
       </div>
       <div class="field" style="margin-bottom:0">
@@ -771,6 +789,15 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <label class="lb" for="sPrior">② 사전증여재산 <button class="help" id="sPriorHelp" type="button" aria-label="설명 보기">?</button></label>
         <div class="unit"><input type="text" id="sPrior" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="sPriorK"></div>
+        <div class="quick" data-target="sPrior">
+          <button type="button" data-add="1000000">+100만</button>
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+
       </div>
       <div class="field">
         <label class="lb" for="sDebt">③ 채무 · 공과금</label>
@@ -839,8 +866,19 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <span>세대를 건너뛴 상속<em>손자녀가 상속받는 경우 산출세액의 30%가 할증됩니다</em></span></label>
       </div>
       <div class="field">
-        <label class="lb" for="sPaid">증여세액공제 <span style="font-weight:400;color:var(--ink-3)">사전증여분 기납부세액</span></label>
-        <div class="unit"><input type="text" id="sPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <label class="lb" for="sPaid">사전증여분 증여세 산출세액 <button class="help" id="sCreditHelp" type="button" aria-label="설명 보기">?</button></label>
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sAuto" checked>
+          <span>위에 넣은 <b>사전증여재산</b>으로 자동 계산<em>그 증여가 해당 관계에서 10년 내 첫 증여였다고 보고 계산합니다</em></span></label>
+        <div id="sPriorRelWrap" style="margin-top:8px">
+          <label class="lb" for="sPriorRel" style="font-size:11.5px">누구에게 증여했는지</label>
+          <select id="sPriorRel">
+            <option value="linealAdult" selected>성년 자녀 — 공제 5,000만원</option>
+            <option value="linealMinor">미성년 자녀 — 공제 2,000만원</option>
+            <option value="spouse">배우자 — 공제 6억원</option>
+            <option value="skipAdult">손자녀 · 세대생략 — 공제 5,000만원 + 30% 할증</option>
+          </select>
+        </div>
+        <div class="unit" style="margin-top:8px"><input type="text" id="sPaid" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="sPaidK"></div>
       </div>
       <div class="field" style="margin-bottom:0">
@@ -873,6 +911,19 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </div>
 </div>
 
+</div>
+
+<div class="mask" id="exitMask">
+  <div class="modal confirm" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
+    <div class="cf">
+      <b id="exitTitle">종료하시겠습니까?</b>
+      <p>입력한 내용은 저장되지 않습니다.</p>
+      <div class="cfbtns">
+        <button class="btn" type="button" data-close>아니오</button>
+        <button class="btn pri" type="button" id="exitYes">예</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -914,6 +965,31 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>세금계산서 · 계산서 · 신용카드매출전표 · 현금영수증 같은 적격증빙을 갖추거나, 실제 지출사실이 <b>금융거래 증명서류</b>로 확인되면 인정됩니다. 현금으로 주고 영수증만 있고 계좌이체 내역이 없으면 부인될 위험이 큽니다.</p>
       <div class="callout"><p><b>환산취득가액을 쓰는 경우는 다릅니다.</b> 자본적지출과 양도비를 실액으로 공제할 수 없고, 취득 당시 기준시가에 3%(미등기 0.3%)를 곱한 개산공제만 적용됩니다.</p>
       <p>다만 실제 확인되는 필요경비 합계가 개산공제액보다 크면 실액을 선택할 수 있으므로, 두 방식을 모두 계산해 유리한 쪽을 택하세요.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 납부세액공제 모달 ============ -->
+<div class="mask" id="gcreditMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gcTitle">
+    <div class="mhd"><h3 id="gcTitle">납부세액공제 · 증여세액공제</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>사전증여재산을 합산해 세금을 다시 계산했으니, 그때 이미 낸 증여세를 빼줍니다. 같은 재산에 세금을 두 번 매기지 않기 위한 장치입니다.</p>
+
+      <h4>차감하는 순서</h4>
+      <p>산출세액에 세대생략 할증을 더한 뒤, <b>신고세액공제보다 먼저</b> 뺍니다. 신고세액공제 3%는 이 공제를 뺀 나머지 금액에 붙습니다. 순서가 바뀌면 세액이 달라집니다.</p>
+      <p>계산 흐름 : 산출세액 → (+) 세대생략 할증 → (−) 납부세액공제 → (−) 신고세액공제 3% → 납부할 세액</p>
+
+      <h4>실제 낸 돈이 아니라 산출세액입니다</h4>
+      <p>공제되는 금액은 그때 통장에서 나간 금액이 아니라 <b>당시의 증여세 산출세액</b>입니다. 신고세액공제 3%를 받아 실제로는 그보다 적게 냈더라도, 공제는 깎이기 전 산출세액을 기준으로 합니다.</p>
+
+      <h4>한도가 있습니다</h4>
+      <p>낸 세금 전부를 빼주지는 않습니다. <b>합산한 재산이 차지하는 몫</b>까지만 공제됩니다.</p>
+      <p>증여세는 <b>산출세액 × (가산한 증여재산의 과세표준 ÷ 전체 과세표준)</b>, 상속세는 <b>상속세 산출세액 × (가산한 증여재산의 과세표준 ÷ 상속세 과세표준)</b>이 한도입니다.</p>
+      <div class="callout"><p><b>한도가 걸리는 경우가 실제로 있습니다.</b> 증여 당시에는 재산 가액이 커서 높은 세율을 물었는데, 이후 상속재산이 공제에 대부분 흡수되어 상속세 과세표준이 작아진 경우입니다. 이때는 낸 증여세를 다 돌려받지 못합니다.</p>
+      <p>이 계산기는 한도에 걸리면 계산 흐름에 한도 금액을 표시하고 아래 각주로 알려드립니다.</p></div>
+
+      <p style="color:var(--ink-3);font-size:12.5px">이 계산기는 가산분 과세표준을 재산가액 비율로 안분해 한도를 구합니다. 증여가 여러 건이거나 상속인별로 공제 한도를 따져야 하는 경우에는 실제 신고서상 금액과 차이가 날 수 있습니다.</p>
     </div>
   </div>
 </div>
@@ -1324,7 +1400,7 @@ var SCREENS = {
 };
 var current = 'home';
 
-function go(key){
+function go(key, fromPop){
   if(!SCREENS[key]) key = 'home';
   current = key;
   for(var k in SCREENS){ $(SCREENS[k].el).style.display = (k === key) ? '' : 'none'; }
@@ -1405,7 +1481,10 @@ Array.prototype.forEach.call(document.querySelectorAll('.quick'), function(q){
     if(b.hasAttribute('data-clear')) cur = 0;
     else cur += parseInt(b.getAttribute('data-add'), 10);
     el.value = cur ? cur.toLocaleString('ko-KR') : '';
-    onInput();
+    var t = q.getAttribute('data-target');
+    if(t.charAt(0) === 'g') gInput();
+    else if(t.charAt(0) === 's' && t !== 'sp') sInput();
+    else onInput();
   });
 });
 
@@ -1515,12 +1594,36 @@ $('resetBtn').addEventListener('click', function(){
   showEmpty('<b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.');
 });
 
+/* 사전증여 한 건의 증여세 산출세액 (그 관계에서 10년 내 첫 증여로 가정) */
+function priorGiftTax(amount, relKey, skip){
+  if(!amount || amount <= 0) return { tax:0, base:0, ded:0, rate:0, sur:0 };
+  var ded = Math.min(GIFT_DED[relKey] ? GIFT_DED[relKey][0] : 0, amount);
+  var base = Math.max(0, amount - ded);
+  var pr = base > 0 ? gsProgressive(base) : { tax:0, rate:0, ded:0 };
+  var sur = 0;
+  if(skip) sur = pr.tax * ((relKey === 'linealMinor' && amount > 2000000000) ? 0.40 : 0.30);
+  return { tax: Math.floor(pr.tax + sur), base: base, ded: ded, rate: pr.rate, sur: Math.floor(sur) };
+}
+
 /* ================= 증여세 ================= */
 var G_NUM = ['gAmt','gPrior','gDebt','gPaid'];
 function gHints(){
-  G_NUM.forEach(function(id){ $(id+'K').textContent = korean(num($(id))); });
   var rel = $('gRel').value;
   $('gMarryWrap').style.display = (rel === 'linealAdult' || rel === 'linealMinor') ? '' : 'none';
+  var auto = $('gAuto').checked;
+  $('gPaid').readOnly = auto;
+  if(auto){
+    var prior = num($('gPrior'));
+    var r = priorGiftTax(prior, rel, $('gSkip').checked);
+    $('gPaid').value = r.tax ? comma(r.tax) : '';
+    $('gPaidK').textContent = prior
+      ? (r.tax ? ('과세표준 ' + comma(r.base) + '원 × ' + Math.round(r.rate*100) + '%' + (r.sur ? ' + 할증' : ''))
+               : '공제 범위 내 · 세액 없음')
+      : '';
+  } else {
+    $('gPaidK').textContent = korean(num($('gPaid')));
+  }
+  ['gAmt','gPrior','gDebt'].forEach(function(id){ $(id+'K').textContent = korean(num($(id))); });
 }
 function gStaleMark(){ if(RPT.rows.length && current === 'gift') $('gStale').style.display = ''; }
 function gInput(){ gHints(); gStaleMark(); }
@@ -1548,7 +1651,12 @@ function gRun(){
   var sur = calc * surRate;
   var gross = calc + sur;
 
-  var paidCredit = Math.min(paid, gross);
+  /* 납부세액공제 한도 — 상증세법 §58① 단서
+     가산한 증여재산의 과세표준이 차지하는 몫만큼만 공제된다 */
+  var priorShare = (amt + prior) > 0 ? prior / (amt + prior) : 0;
+  var creditCap = prior > 0 ? calc * priorShare : 0;
+  var paidCredit = Math.min(paid, creditCap);
+  var capped = paid > 0 && paid > creditCap + 1;
   var afterCredit = Math.max(0, gross - paidCredit);
   var reportCredit = $('gReport').checked ? Math.floor(afterCredit * 0.03) : 0;
   var payable = Math.max(0, afterCredit - reportCredit);
@@ -1566,7 +1674,10 @@ function gRun(){
     '', 'muted', 'gsrate']);
   rows.push(['','','산출세액','', won(calc), 'sum']);
   if(sur) rows.push(['⑥','+','세대생략 할증', '산출세액의 ' + Math.round(surRate*100) + '%', won(sur)]);
-  if(paidCredit) rows.push(['⑦','−','기납부 증여세액공제','사전증여분', won(paidCredit)]);
+  if(paid > 0) rows.push(['⑦','−','납부세액공제',
+    prior > 0 ? ('한도 ' + comma(Math.round(creditCap)) + '원 · 가산분 과세표준 몫')
+              : '가산한 증여재산이 없어 공제 대상 아님',
+    won(paidCredit), paidCredit?'':'muted', 'gcredit']);
   if(reportCredit) rows.push(['⑧','−','신고세액공제','기한 내 신고 3%', won(reportCredit)]);
   rows.push(['','','납부할 세액','', won(payable), 'final']);
 
@@ -1577,7 +1688,10 @@ function gRun(){
   notes.push('<b>신고기한</b> 증여일이 속한 달의 말일부터 3개월 이내. 기한 내 신고하면 3%를 공제받습니다.');
   notes.push('증여재산공제는 <b>10년 합산 한도</b>입니다. 같은 관계에서 10년 안에 이미 공제를 받았다면 남은 한도만 적용됩니다.');
   if(debt) notes.push('부담부증여로 넘긴 채무액은 증여자에게 <b>양도소득세</b>가 별도로 과세됩니다. 양도소득세 계산기로 따로 확인하십시오.');
-  if(prior) notes.push('10년 내 동일인(직계존속은 배우자 포함)에게 받은 증여재산은 합산해 과세하고, 이미 낸 세액을 공제합니다.');
+  if(prior) notes.push('10년 내 동일인(직계존속은 배우자 포함)에게 받은 증여재산은 합산해 과세하고, 그에 대한 증여세 산출세액을 <b>납부세액공제</b>로 뺍니다.');
+  if($('gAuto').checked && prior) notes.push('사전증여분 산출세액을 <b>자동 계산</b>했습니다. 그 증여가 같은 관계에서 10년 내 첫 증여였다는 전제이며, 증여가 여러 건이거나 당시 공제를 이미 썼다면 체크를 풀고 실제 신고서상 산출세액을 넣으십시오.');
+  if(capped) notes.push('입력하신 사전증여 세액이 <b>공제 한도를 넘어</b> 한도까지만 반영했습니다. 합산분이 차지하는 몫을 넘는 금액은 공제되지 않습니다.');
+  if(paid > 0 && prior === 0) notes.push('가산할 사전증여재산을 입력하지 않아 납부세액공제가 적용되지 않았습니다. ② 칸에 합산 대상 증여재산가액을 함께 넣어 주세요.');
   notes.push('단순 참고용 계산입니다. 가업승계 과세특례, 창업자금 특례, 재해손실공제 등은 반영하지 않았습니다.');
 
   renderLedger(G_IDS, { rows:rows, badges:badges, notes:notes,
@@ -1587,9 +1701,27 @@ function gRun(){
 /* ================= 상속세 ================= */
 var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid'];
 function sHints(){
-  S_NUM.forEach(function(id){ $(id+'K').textContent = korean(num($(id))); });
   $('sSpouseAmtWrap').style.display = $('sSpouse').checked ? '' : 'none';
   $('sHomeAmtWrap').style.display = $('sHome').checked ? '' : 'none';
+  var auto = $('sAuto').checked;
+  $('sPriorRelWrap').style.display = auto ? '' : 'none';
+  $('sPaid').readOnly = auto;
+  if(auto){
+    var prior = num($('sPrior'));
+    var sel = $('sPriorRel').value;
+    var relKey = (sel === 'skipAdult') ? 'linealAdult' : sel;
+    var r = priorGiftTax(prior, relKey, sel === 'skipAdult');
+    $('sPaid').value = r.tax ? comma(r.tax) : '';
+    $('sPaidK').textContent = prior
+      ? (r.tax ? ('과세표준 ' + comma(r.base) + '원 × ' + Math.round(r.rate*100) + '%' + (r.sur ? ' + 할증' : ''))
+               : '공제 범위 내 · 세액 없음')
+      : '';
+  } else {
+    $('sPaidK').textContent = korean(num($('sPaid')));
+  }
+  ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt'].forEach(function(id){
+    $(id+'K').textContent = korean(num($(id)));
+  });
 }
 function sStaleMark(){ if(RPT.rows.length && current === 'inherit') $('sStale').style.display = ''; }
 function sInput(){ sHints(); sStaleMark(); }
@@ -1650,7 +1782,12 @@ function sRun(){
   var surRate = $('sSkip').checked ? 0.30 : 0;
   var sur = calc * surRate;
   var gross = calc + sur;
-  var paidCredit = Math.min(paid, gross);
+  /* 증여세액공제 한도 — 상증세법 §28②
+     가산한 증여재산의 과세표준이 상속세 과세표준에서 차지하는 몫만큼 */
+  var sShare = taxBase > 0 ? Math.min(prior / taxBase, 1) : 0;
+  var sCap = prior > 0 ? calc * sShare : 0;
+  var paidCredit = Math.min(paid, sCap);
+  var sCapped = paid > 0 && paid > sCap + 1;
   var afterCredit = Math.max(0, gross - paidCredit);
   var reportCredit = $('sReport').checked ? Math.floor(afterCredit * 0.03) : 0;
   var payable = Math.max(0, afterCredit - reportCredit);
@@ -1670,7 +1807,10 @@ function sRun(){
     '', 'muted', 'gsrate']);
   rows.push(['','','산출세액','', won(calc), 'sum']);
   if(sur) rows.push(['','+','세대생략 할증','산출세액의 30%', won(sur)]);
-  if(paidCredit) rows.push(['','−','증여세액공제','사전증여분 기납부세액', won(paidCredit)]);
+  if(paid > 0) rows.push(['','−','증여세액공제',
+    prior > 0 ? ('한도 ' + comma(Math.round(sCap)) + '원 · 가산분 과세표준 몫')
+              : '가산한 사전증여재산이 없어 공제 대상 아님',
+    won(paidCredit), paidCredit?'':'muted', 'gcredit']);
   if(reportCredit) rows.push(['','−','신고세액공제','기한 내 신고 3%', won(reportCredit)]);
   rows.push(['','','납부할 세액','', won(payable), 'final']);
 
@@ -1681,7 +1821,10 @@ function sRun(){
   notes.push('<b>신고기한</b> 상속개시일이 속한 달의 말일부터 6개월 이내. 기한 내 신고하면 3%를 공제받습니다.');
   notes.push('배우자상속공제는 <b>실제 상속받은 금액</b>을 기준으로 합니다. 협의분할로 배우자 몫을 늘리면 공제도 커지지만, 다음 상속에서 다시 과세되므로 함께 검토해야 합니다.');
   if(hasSpouse && childCount === 0) notes.push('배우자가 단독으로 상속받는 경우 <b>일괄공제 5억원을 적용할 수 없습니다.</b> 기초공제 2억원과 인적공제만 적용됩니다.');
-  if(prior) notes.push('사전증여재산은 상속인은 10년, 상속인이 아닌 자는 5년 이내분을 합산합니다.');
+  if(prior) notes.push('사전증여재산은 상속인은 10년, 상속인이 아닌 자는 5년 이내분을 합산하고, 당시 낸 증여세 산출세액을 <b>증여세액공제</b>로 뺍니다.');
+  if($('sAuto').checked && prior) notes.push('사전증여분 산출세액을 <b>자동 계산</b>했습니다. 그 증여가 해당 관계에서 10년 내 첫 증여였다는 전제입니다. 증여가 여러 건이면 체크를 풀고 실제 신고서상 산출세액 합계를 넣으십시오.');
+  if(sCapped) notes.push('입력하신 증여세액이 <b>공제 한도를 넘어</b> 한도까지만 반영했습니다. 사전증여분이 상속세 과세표준에서 차지하는 몫이 한도입니다.');
+  if(paid > 0 && prior === 0) notes.push('가산할 사전증여재산을 입력하지 않아 증여세액공제가 적용되지 않았습니다. ② 칸에 합산 대상 증여재산가액을 함께 넣어 주세요.');
   notes.push('단순 참고용 계산입니다. 가업상속공제, 영농상속공제, 미성년자 · 장애인 · 연로자 공제, 상속공제 종합한도는 반영하지 않았습니다.');
 
   renderLedger(S_IDS, { rows:rows, badges:badges, notes:notes,
@@ -1698,8 +1841,8 @@ G_NUM.concat(S_NUM).forEach(function(id){
     if(G_NUM.indexOf(id) >= 0) gInput(); else sInput();
   });
 });
-['gRel','gMarry','gSkip','gReport'].forEach(function(id){ $(id).addEventListener('change', gInput); });
-['sSpouse','sHome','sSkip','sReport'].forEach(function(id){ $(id).addEventListener('change', sInput); });
+['gRel','gMarry','gSkip','gReport','gAuto'].forEach(function(id){ $(id).addEventListener('change', gInput); });
+['sSpouse','sHome','sSkip','sReport','sAuto','sPriorRel'].forEach(function(id){ $(id).addEventListener('change', sInput); });
 Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(b){
   b.addEventListener('click', function(){
     Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
@@ -1712,12 +1855,14 @@ $('gCalc').addEventListener('click', function(){ gRun(); if(window.innerWidth < 
 $('sCalc').addEventListener('click', function(){ sRun(); if(window.innerWidth < 940) document.querySelector('#scr-inherit .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
 $('gReset').addEventListener('click', function(){
   G_NUM.forEach(function(id){ $(id).value=''; });
-  $('gRel').value='linealAdult'; $('gMarry').checked=false; $('gSkip').checked=false; $('gReport').checked=true;
+  $('gRel').value='linealAdult'; $('gMarry').checked=false; $('gSkip').checked=false;
+  $('gReport').checked=true; $('gAuto').checked=true;
   gHints(); clearLedger(G_IDS, G_EMPTY);
 });
 $('sReset').addEventListener('click', function(){
   S_NUM.forEach(function(id){ $(id).value=''; });
-  $('sSpouse').checked=true; $('sHome').checked=false; $('sSkip').checked=false; $('sReport').checked=true;
+  $('sSpouse').checked=true; $('sHome').checked=false; $('sSkip').checked=false;
+  $('sReport').checked=true; $('sAuto').checked=true; $('sPriorRel').value='linealAdult';
   childCount=2;
   Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function(x){
     x.setAttribute('aria-pressed', x.getAttribute('data-v')==='2' ? 'true':'false'); });
@@ -1735,6 +1880,8 @@ $('sReset').addEventListener('click', function(){
 $('gPriorHelp').addEventListener('click', function(){ openModal($('gpriorMask')); });
 $('sPriorHelp').addEventListener('click', function(){ openModal($('spriorMask')); });
 $('gDedHelp').addEventListener('click', function(){ openModal($('gdedMask')); });
+$('gCreditHelp').addEventListener('click', function(){ openModal($('gcreditMask')); });
+$('sCreditHelp').addEventListener('click', function(){ openModal($('gcreditMask')); });
 $('sDedHelp').addEventListener('click', function(){ openModal($('sdedMask')); });
 
 /* 화면 이동 */
@@ -2293,6 +2440,43 @@ try{
     document.head.appendChild(link);
   }
 }catch(e){}
+
+/* ---------------- 안드로이드 뒤로가기 ---------------- */
+var pushed = 0;
+function guard(){ pushed++; try{ history.pushState({ g:pushed }, ''); }catch(e){} }
+
+function overlayOpen(){
+  return !!document.querySelector('.mask.on') || $('menu').classList.contains('on');
+}
+function closeOverlays(){
+  Array.prototype.forEach.call(document.querySelectorAll('.mask.on'), closeModal);
+  closeMenu();
+}
+
+function onPop(){
+  guard();                       // 항상 한 칸 채워 넣어 실제 이탈을 막는다
+  if(overlayOpen()){ closeOverlays(); return; }
+  if(current !== 'home'){ go('home', true); return; }
+  openModal($('exitMask'));
+}
+
+function exitApp(){
+  window.removeEventListener('popstate', onPop);
+  closeModal($('exitMask'));
+  try{ window.close(); }catch(e){}
+  setTimeout(function(){
+    try{ history.go(-(pushed + 1)); }catch(e){}
+  }, 120);
+  setTimeout(function(){
+    if(!document.hidden) toast('브라우저에서는 종료할 수 없습니다. 홈 화면에 추가한 앱에서 동작합니다.', 4200);
+    window.addEventListener('popstate', onPop);
+  }, 900);
+}
+
+$('exitYes').addEventListener('click', exitApp);
+try{ history.replaceState({ g:0 }, ''); }catch(e){}
+guard();
+window.addEventListener('popstate', onPop);
 
 syncVisibility();
 refreshHints();
