@@ -462,6 +462,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="yangdo"><span class="dot"></span>양도소득세<small>부동산</small></button>
   <button class="mitem" type="button" data-go="gift"><span class="dot"></span>증여세<small>사전증여 합산</small></button>
   <button class="mitem" type="button" data-go="inherit"><span class="dot"></span>상속세<small>상속공제 반영</small></button>
+  <button class="mitem" type="button" data-go="chwideuk"><span class="dot"></span>취득세<small>매매 · 증여 · 상속</small></button>
+  <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
   <button class="mitem" type="button" data-go="jongbu"><span class="dot"></span>종합부동산세<small>주택분</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
 </nav>
@@ -493,6 +495,16 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <button class="homecard" type="button" data-go="jongbu">
       <span class="ico">종부</span>
       <span><b>종합부동산세</b><span>공시가격 · 세액공제 반영</span></span>
+      <span class="arrow">›</span>
+    </button>
+    <button class="homecard" type="button" data-go="chwideuk">
+      <span class="ico">취득</span>
+      <span><b>취득세</b><span>매매 · 증여 · 상속 취득 전부</span></span>
+      <span class="arrow">›</span>
+    </button>
+    <button class="homecard on2" type="button" data-go="compare">
+      <span class="ico">비교</span>
+      <span><b>증여 vs 상속 비교</b><span>지금 줄까, 나중에 물려줄까</span></span>
       <span class="arrow">›</span>
     </button>
     <button class="homecard on2" type="button" data-go="loan">
@@ -753,7 +765,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <div class="hd"><span class="idx">B</span><h2>증여자와의 관계</h2><span class="note">10년 합산 한도</span></div>
     <div class="bd">
       <div class="field">
-        <label class="lb" for="gRel">관계 <button class="help" id="gDedHelp" type="button" aria-label="증여재산공제 설명">?</button></label>
+        <label class="lb" for="gRel">관계 <button class="help" id="gDedHelp" type="button" aria-label="증여재산공제 설명">?</button><button class="help" id="gCarryHelp" type="button" aria-label="이월과세 설명" style="background:var(--flag)">!</button></label>
         <select id="gRel">
           <option value="spouse">배우자 — 6억원</option>
           <option value="linealAdult" selected>직계존속 → 성년 자녀 · 손자녀 — 5천만원</option>
@@ -962,6 +974,182 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </div>
 
 
+<!-- ============ 취득세 ============ -->
+<div class="grid" id="scr-chwideuk" style="display:none">
+<div>
+  <section class="card">
+    <div class="hd"><span class="idx">A</span><h2>취득 내용</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="tCause">취득 원인</label>
+        <select id="tCause">
+          <option value="buy" selected>유상 매매</option>
+          <option value="gift">증여 (무상취득)</option>
+          <option value="inherit">상속</option>
+          <option value="build">신축 (원시취득)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lb" for="tKind">자산 종류</label>
+        <select id="tKind">
+          <option value="house" selected>주택</option>
+          <option value="other">주택 외 (토지 · 상가 · 오피스텔)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="tPrice">취득가액 <span class="req">*</span> <button class="help" id="tBaseHelp" type="button" aria-label="과세표준 설명">?</button></label>
+        <div class="unit"><input type="text" id="tPrice" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="tPriceK"></div>
+        <div class="quick" data-target="tPrice">
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="300000000">+3억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="tHouseCard">
+    <div class="hd"><span class="idx">B</span><h2>주택 조건</h2><span class="note">세율을 가릅니다</span></div>
+    <div class="bd">
+      <div class="field" id="tCntWrap">
+        <label class="lb">취득 후 보유 주택 수 <button class="help" id="tRateHelp" type="button" aria-label="세율표 보기">?</button></label>
+        <div class="seg" id="tCntSeg">
+          <button type="button" data-v="1" aria-pressed="true">1주택<small>1~3%</small></button>
+          <button type="button" data-v="2" aria-pressed="false">2주택<small>조정 8%</small></button>
+          <button type="button" data-v="3" aria-pressed="false">3주택 이상<small>최대 12%</small></button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="tAdj">
+          <span>조정대상지역 소재<em>2주택부터 중과세율이 적용되고, 증여취득도 시가표준액 3억원 이상이면 12%가 됩니다</em></span></label>
+        <label class="chk"><input type="checkbox" id="tArea">
+          <span>전용면적 85㎡ 초과<em>국민주택규모를 넘으면 농어촌특별세가 붙습니다</em></span></label>
+      </div>
+      <div class="field" id="tFirstWrap" style="margin-bottom:0">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="tFirst">
+          <span>생애최초 주택 구입<em>12억원 이하 주택이면 취득세를 최대 200만원까지 감면받습니다</em></span></label>
+      </div>
+      <div class="field" id="tNoHomeWrap" style="display:none;margin-bottom:0">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="tNoHome">
+          <span>무주택 1가구가 상속받음<em>세율이 2.8%에서 0.8%로 낮아집니다</em></span></label>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="button" id="tReset">입력 초기화</button>
+    <button class="btn pri" type="button" id="tCalc">계산하기</button>
+  </div>
+</div>
+
+<div class="ledger-col">
+  <section class="card ledger">
+    <div class="hd"><span class="idx">계산</span><h2>세액 계산 흐름</h2><span class="note" id="tDateNote"></span></div>
+    <div class="stale" id="tStale" style="display:none">입력이 바뀌었습니다. <b>계산하기</b>를 다시 눌러 주세요.</div>
+    <div id="tBadges" class="badges" style="display:none"></div>
+    <div class="bd" id="tOut">
+      <div class="empty"><b>취득가액을 입력하세요</b>취득 원인과 조건을 고른 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.</div>
+    </div>
+    <div class="foot" id="tFoot" style="display:none"></div>
+    <div class="pdfbar" id="tPdfbar" style="display:none">
+      <button class="pdfbtn" type="button" data-save="pdf">PDF로 저장</button>
+      <button class="pdfbtn alt" type="button" data-save="png">이미지로 저장</button>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- ============ 증여 vs 상속 비교 ============ -->
+<div class="grid" id="scr-compare" style="display:none">
+<div>
+  <section class="card">
+    <div class="hd"><span class="idx">A</span><h2>재산과 상속인</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="cEstate">총 재산가액 <span class="req">*</span></label>
+        <div class="unit"><input type="text" id="cEstate" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="cEstateK"></div>
+        <div class="quick" data-target="cEstate">
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" data-add="3000000000">+30억</button>
+          <button type="button" data-add="5000000000">+50억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="cSpouse" checked>
+          <span>배우자가 생존해 있음<em>법정상속분대로 상속받는 것으로 계산합니다</em></span></label>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb">자녀 수</label>
+        <div class="seg" id="cChildSeg">
+          <button type="button" data-v="0" aria-pressed="false">없음</button>
+          <button type="button" data-v="1" aria-pressed="false">1명</button>
+          <button type="button" data-v="2" aria-pressed="true">2명</button>
+          <button type="button" data-v="3" aria-pressed="false">3명</button>
+          <button type="button" data-v="4" aria-pressed="false">4명</button>
+          <button type="button" data-v="5" aria-pressed="false">5명</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">B</span><h2>미리 증여할 금액</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="cGift">사전증여 금액 <span class="req">*</span></label>
+        <div class="unit"><input type="text" id="cGift" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="cGiftK"></div>
+        <div class="quick" data-target="cGift">
+          <button type="button" data-add="50000000">+5,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" data-add="300000000">+3억</button>
+          <button type="button" data-add="500000000">+5억</button>
+          <button type="button" data-add="1000000000">+10억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="cRel">누구에게 증여할지</label>
+        <select id="cRel">
+          <option value="linealAdult" selected>성년 자녀 — 공제 5,000만원</option>
+          <option value="linealMinor">미성년 자녀 — 공제 2,000만원</option>
+          <option value="spouse">배우자 — 공제 6억원</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="button" id="cReset">입력 초기화</button>
+    <button class="btn pri" type="button" id="cCalc">비교하기</button>
+  </div>
+</div>
+
+<div class="ledger-col">
+  <section class="card ledger">
+    <div class="hd"><span class="idx">비교</span><h2>세 갈래 비교</h2><span class="note" id="cDateNote"></span></div>
+    <div class="stale" id="cStale" style="display:none">입력이 바뀌었습니다. <b>비교하기</b>를 다시 눌러 주세요.</div>
+    <div id="cBadges" class="badges" style="display:none"></div>
+    <div class="bd" id="cOut">
+      <div class="empty"><b>재산가액과 증여할 금액을 입력하세요</b>세 가지 경우의 세금을 나란히 놓고<br>얼마나 차이 나는지 보여드립니다.</div>
+    </div>
+    <div class="foot" id="cFoot" style="display:none"></div>
+    <div class="pdfbar" id="cPdfbar" style="display:none">
+      <button class="pdfbtn" type="button" data-save="pdf">PDF로 저장</button>
+      <button class="pdfbtn alt" type="button" data-save="png">이미지로 저장</button>
+    </div>
+  </section>
+</div>
+</div>
+
 <!-- ============ 종합부동산세 ============ -->
 <div class="grid" id="scr-jongbu" style="display:none">
 <div>
@@ -1154,6 +1342,101 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>세금계산서 · 계산서 · 신용카드매출전표 · 현금영수증 같은 적격증빙을 갖추거나, 실제 지출사실이 <b>금융거래 증명서류</b>로 확인되면 인정됩니다. 현금으로 주고 영수증만 있고 계좌이체 내역이 없으면 부인될 위험이 큽니다.</p>
       <div class="callout"><p><b>환산취득가액을 쓰는 경우는 다릅니다.</b> 자본적지출과 양도비를 실액으로 공제할 수 없고, 취득 당시 기준시가에 3%(미등기 0.3%)를 곱한 개산공제만 적용됩니다.</p>
       <p>다만 실제 확인되는 필요경비 합계가 개산공제액보다 크면 실액을 선택할 수 있으므로, 두 방식을 모두 계산해 유리한 쪽을 택하세요.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 이월과세 모달 ============ -->
+<div class="mask" id="carryMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cyTitle">
+    <div class="mhd"><h3 id="cyTitle">이월과세 — 10년 규정</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <div class="callout"><p><b>증여받은 부동산을 10년 안에 팔면 양도세가 크게 늘어납니다.</b> 취득가액이 받은 사람의 증여가액이 아니라 <b>증여자가 처음 샀던 가격</b>으로 되돌아가기 때문입니다.</p></div>
+
+      <h4>왜 있는 규정인가</h4>
+      <p>2억에 산 집이 8억이 됐다고 해봅시다. 그대로 팔면 양도차익 6억에 세금이 붙습니다. 그런데 배우자에게 증여하면 배우자의 취득가액은 8억이 되고, 배우자가 곧바로 8억에 팔면 양도차익이 0원입니다. 배우자 증여재산공제 6억까지 있으니 증여세도 거의 없습니다.</p>
+      <p>이 구멍을 막은 것이 이월과세입니다. 10년 안에 팔면 취득가액을 원래 2억으로 되돌려 양도차익 6억에 그대로 과세합니다.</p>
+
+      <h4>적용 대상</h4>
+      <ul>
+        <li><b>배우자 또는 직계존비속</b>에게서 증여받은 경우</li>
+        <li>토지 · 건물 · 부동산을 취득할 수 있는 권리 · 시설물이용권</li>
+        <li>증여일부터 <b>10년 이내</b> 양도 (2023년 1월 1일 이후 증여분. 그 전은 5년)</li>
+      </ul>
+
+      <h4>세금이 얼마나 달라지나</h4>
+      <p>취득가액만 바뀌는 것이 아닙니다.</p>
+      <ul>
+        <li>취득가액 → 증여자가 취득한 당시 가액</li>
+        <li>장기보유특별공제 보유기간 → <b>증여자가 취득한 날</b>부터 기산 (이건 유리하게 작용합니다)</li>
+        <li>이미 낸 증여세 → 필요경비로 빼줍니다</li>
+      </ul>
+
+      <h4>적용되지 않는 경우</h4>
+      <ul>
+        <li>사망으로 혼인관계가 소멸된 뒤 양도</li>
+        <li>사업인정고시일 전 취득해 협의매수 · 수용된 경우</li>
+        <li>양도 당시 <b>1세대 1주택 비과세</b>에 해당하는 경우</li>
+        <li>이월과세를 적용한 세액이 적용하지 않은 세액보다 <b>적은</b> 경우</li>
+      </ul>
+
+      <div class="callout"><p><b>상담에서 짚을 것.</b> 증여로 취득가액을 높여 양도세를 줄이려는 설계라면 10년을 버틸 수 있는지부터 확인해야 합니다. 반대로 <b>계속 보유할 재산</b>이거나 <b>앞으로 오를 자산</b>이라면 이월과세와 무관하게 사전증여 실익이 큽니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 취득세 세율 모달 ============ -->
+<div class="mask" id="trateMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="trTitle">
+    <div class="mhd"><h3 id="trTitle">취득세율</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <h4>주택 유상 매매</h4>
+      <table class="mtable">
+        <tr><th>구분</th><th>취득세</th><th>지방교육세</th></tr>
+        <tr><td>1주택 · 6억원 이하</td><td>1%</td><td>0.1%</td></tr>
+        <tr><td>1주택 · 6~9억원</td><td>1~3% 누진</td><td>0.1~0.3%</td></tr>
+        <tr><td>1주택 · 9억원 초과</td><td>3%</td><td>0.3%</td></tr>
+        <tr><td>비조정 2주택</td><td>1~3%</td><td>0.1~0.3%</td></tr>
+        <tr><td>조정 2주택 · 비조정 3주택</td><td>8%</td><td>0.4%</td></tr>
+        <tr><td>조정 3주택 이상 · 법인</td><td>12%</td><td>0.4%</td></tr>
+      </table>
+      <p>6억원에서 9억원 사이는 계단식이 아니라 <b>가격에 따라 매끄럽게 오르는</b> 구조입니다. 계산식은 (취득가액 × 2 ÷ 3억원 − 3)%이고, 7억 5천만원이면 정확히 2%가 됩니다.</p>
+
+      <h4>증여 · 상속 · 신축</h4>
+      <table class="mtable">
+        <tr><th>구분</th><th>취득세</th><th>지방교육세</th></tr>
+        <tr><td>증여 (일반)</td><td>3.5%</td><td>0.3%</td></tr>
+        <tr><td>증여 · 조정지역 3억원 이상 주택</td><td>12%</td><td>0.4%</td></tr>
+        <tr><td>상속 (주택)</td><td>2.8%</td><td>0.16%</td></tr>
+        <tr><td>상속 · 무주택 1가구</td><td>0.8%</td><td>0.16%</td></tr>
+        <tr><td>신축 (원시취득)</td><td>2.8%</td><td>0.16%</td></tr>
+        <tr><td>주택 외 유상 (토지 · 상가)</td><td>4%</td><td>0.4%</td></tr>
+      </table>
+
+      <h4>농어촌특별세</h4>
+      <p>전용면적 <b>85㎡ 이하 주택은 비과세</b>입니다. 초과하면 0.2%가 붙고, 중과세율이 적용되면 8%일 때 0.6%, 12%일 때 1.0%로 올라갑니다. 주택이 아닌 부동산은 면적과 무관하게 0.2%입니다.</p>
+
+      <div class="callout"><p><b>일시적 2주택.</b> 새 집을 사고 종전 주택을 기한 안에 처분하면 1주택 세율이 적용됩니다. 처분하지 못하면 중과세율과의 차액을 가산세와 함께 추징당하므로, 처분 기한을 반드시 확인하십시오.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 취득세 과세표준 모달 ============ -->
+<div class="mask" id="tbaseMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tbTitle">
+    <div class="mhd"><h3 id="tbTitle">취득세 과세표준</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>무엇을 기준으로 세금을 매기는지가 취득 원인에 따라 다릅니다.</p>
+      <table class="mtable">
+        <tr><th>취득 원인</th><th>과세표준</th></tr>
+        <tr><td>유상 매매</td><td>실제 취득가격 (사실상의 취득가격)</td></tr>
+        <tr><td>증여 (무상)</td><td>시가인정액 — 없으면 시가표준액</td></tr>
+        <tr><td>상속</td><td>시가표준액</td></tr>
+        <tr><td>신축</td><td>사실상 취득가격 (공사비 등)</td></tr>
+      </table>
+      <p><b>시가인정액</b>은 취득일 전 6개월부터 취득일 후 3개월 사이의 매매사례가액, 감정가액, 공매가액을 말합니다. 증여는 2023년부터 시가인정액이 원칙이 되어, 예전처럼 낮은 공시가격 기준으로 취득세를 내기 어려워졌습니다.</p>
+      <div class="callout"><p><b>취득가액에 포함되는 것.</b> 중개보수, 법무사 보수, 건설자금이자, 할부이자 등 취득에 든 간접비용도 과세표준에 들어갑니다. 다만 개인이 취득하는 경우 중개보수는 제외됩니다.</p></div>
+      <p>이 계산기는 입력하신 금액을 그대로 과세표준으로 씁니다. 증여나 상속이라면 시가인정액 또는 시가표준액을 넣으십시오.</p>
     </div>
   </div>
 </div>
@@ -1723,7 +2006,9 @@ var SCREENS = {
   gift:    { el:'scr-gift',    title:'증여세' },
   inherit: { el:'scr-inherit', title:'상속세' },
   jongbu:  { el:'scr-jongbu',  title:'종합부동산세' },
-  loan:    { el:'scr-loan',    title:'대출 상환 계산기' }
+  loan:    { el:'scr-loan',    title:'대출 상환 계산기' },
+  chwideuk:{ el:'scr-chwideuk', title:'취득세' },
+  compare: { el:'scr-compare', title:'증여 vs 상속 비교' }
 };
 var current = 'home';
 
@@ -2074,6 +2359,10 @@ function gRun(){
   if($('gAuto').checked && prior) notes.push('사전증여분 산출세액을 <b>자동 계산</b>했습니다. 그 증여가 같은 관계에서 10년 내 첫 증여였다는 전제이며, 증여가 여러 건이거나 당시 공제를 이미 썼다면 체크를 풀고 실제 신고서상 산출세액을 넣으십시오.');
   if(capped) notes.push('입력하신 사전증여 세액이 <b>공제 한도를 넘어</b> 한도까지만 반영했습니다. 합산분이 차지하는 몫을 넘는 금액은 공제되지 않습니다.');
   if(paid > 0 && prior === 0) notes.push('가산할 사전증여재산을 입력하지 않아 납부세액공제가 적용되지 않았습니다. ② 칸에 합산 대상 증여재산가액을 함께 넣어 주세요.');
+  if(rel === 'spouse' || rel === 'linealAdult' || rel === 'linealMinor' || rel === 'descendant'){
+    notes.push('<b>이월과세 주의.</b> 받은 부동산을 <b>10년 안에 팔면</b> 취득가액이 증여자의 당초 취득가액으로 되돌아가 양도소득세가 크게 늘어납니다. 배우자 · 직계존비속 사이 증여에 적용됩니다.');
+    badges.push(['warn','10년 내 양도 시 이월과세']);
+  }
   notes.push('단순 참고용 계산입니다. 가업승계 과세특례, 창업자금 특례, 재해손실공제 등은 반영하지 않았습니다.');
 
   renderLedger(G_IDS, { rows:rows, badges:badges, notes:notes,
@@ -2229,6 +2518,194 @@ function sRun(){
 
   renderLedger(S_IDS, { rows:rows, badges:badges, notes:notes,
     krw: korean(payable) || '0원', title:'상속세 계산 결과', slug:'inherit-tax' });
+}
+
+/* ================= 취득세 ================= */
+var tCount = 1;
+var T_IDS = { out:'tOut', stale:'tStale', badges:'tBadges', foot:'tFoot', pdfbar:'tPdfbar', dateNote:'tDateNote' };
+var T_EMPTY = '<b>취득가액을 입력하세요</b>취득 원인과 조건을 고른 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.';
+
+function tHints(){
+  $('tPriceK').textContent = korean(num($('tPrice')));
+  var cause = $('tCause').value, isHouse = $('tKind').value === 'house';
+  $('tHouseCard').style.display = isHouse ? '' : 'none';
+  $('tCntWrap').style.display   = (isHouse && cause === 'buy') ? '' : 'none';
+  $('tFirstWrap').style.display = (isHouse && cause === 'buy') ? '' : 'none';
+  $('tNoHomeWrap').style.display = (isHouse && cause === 'inherit') ? '' : 'none';
+}
+function tInput(){ tHints(); if(RPT.rows.length && current === 'chwideuk') $('tStale').style.display = ''; }
+
+function acqRates(price){
+  var cause = $('tCause').value, isHouse = $('tKind').value === 'house';
+  var adj = $('tAdj').checked, over85 = $('tArea').checked;
+  var rate = 0, label = '', edu = 0, farm = 0, heavy = false;
+
+  if(!isHouse){
+    if(cause === 'buy'){ rate = 0.04; label = '주택 외 유상취득 4%'; edu = 0.004; }
+    else if(cause === 'gift'){ rate = 0.035; label = '무상취득 3.5%'; edu = 0.003; }
+    else if(cause === 'inherit'){ rate = 0.028; label = '상속취득 2.8%'; edu = 0.0016; }
+    else { rate = 0.028; label = '원시취득 2.8%'; edu = 0.0016; }
+    farm = 0.002;
+    return { rate:rate, label:label, edu:edu, farm:farm, heavy:false };
+  }
+
+  if(cause === 'buy'){
+    if(tCount === 1 || (tCount === 2 && !adj)){
+      if(price <= 600000000){ rate = 0.01; label = '6억원 이하 · 1%'; }
+      else if(price <= 900000000){
+        rate = Math.round((price * 2 / 300000000 - 3) * 10000) / 10000 / 100;
+        label = '6~9억원 구간 · ' + (Math.round(rate * 100000) / 1000) + '%';
+      } else { rate = 0.03; label = '9억원 초과 · 3%'; }
+      edu = rate * 0.1;
+    } else if(tCount === 2 || (tCount >= 3 && !adj)){
+      rate = 0.08; label = '2주택 중과 · 8%'; edu = 0.004; heavy = true;
+    } else {
+      rate = 0.12; label = '3주택 이상 중과 · 12%'; edu = 0.004; heavy = true;
+    }
+  } else if(cause === 'gift'){
+    if(adj && price >= 300000000){ rate = 0.12; label = '조정지역 3억원 이상 증여 · 12%'; edu = 0.004; heavy = true; }
+    else { rate = 0.035; label = '무상취득 · 3.5%'; edu = 0.003; }
+  } else if(cause === 'inherit'){
+    if($('tNoHome').checked){ rate = 0.008; label = '무주택 1가구 상속 · 0.8%'; }
+    else { rate = 0.028; label = '상속취득 · 2.8%'; }
+    edu = 0.0016;
+  } else { rate = 0.028; label = '원시취득 · 2.8%'; edu = 0.0016; }
+
+  if(over85) farm = (rate >= 0.12) ? 0.01 : (rate >= 0.08 ? 0.006 : 0.002);
+  return { rate:rate, label:label, edu:edu, farm:farm, heavy:heavy };
+}
+
+function tRun(){
+  tHints();
+  var price = num($('tPrice'));
+  if(!price){ clearLedger(T_IDS, T_EMPTY); toast('취득가액을 입력하세요'); $('tPrice').focus(); return; }
+
+  var cause = $('tCause').value, isHouse = $('tKind').value === 'house';
+  var r = acqRates(price);
+  var acqTax = price * r.rate;
+  var edu = price * r.edu;
+  var farm = price * r.farm;
+
+  var firstCut = 0;
+  if(isHouse && cause === 'buy' && $('tFirst').checked && price <= 1200000000){
+    firstCut = Math.min(acqTax, 2000000);
+  }
+  var total = Math.max(0, acqTax - firstCut) + edu + farm;
+
+  var causeName = { buy:'유상 매매', gift:'증여', inherit:'상속', build:'신축' }[cause];
+  var rows = [], badges = [], notes = [];
+  rows.push(['①','','과세표준', causeName + ' · ' + (isHouse ? '주택' : '주택 외'), won(price), '', 'tbase']);
+  rows.push(['②','×','취득세율', r.label, '', 'muted', 'trate']);
+  rows.push(['','','취득세','', won(acqTax), 'sum']);
+  if(firstCut) rows.push(['','−','생애최초 감면','12억원 이하 · 최대 200만원', won(firstCut)]);
+  rows.push(['③','+','지방교육세', (Math.round(r.edu * 100000) / 1000) + '%', won(edu)]);
+  rows.push(['④','+','농어촌특별세', r.farm ? ((Math.round(r.farm * 100000) / 1000) + '%') : (isHouse ? '85㎡ 이하 · 비과세' : '0.2%'), won(farm), r.farm ? '' : 'muted']);
+  rows.push(['','','총 납부세액','', won(total), 'final']);
+
+  badges.push([r.heavy ? 'warn' : '', '실효 ' + (Math.round((total / price) * 10000) / 100) + '%']);
+  if(r.heavy) badges.push(['warn', '중과세율 적용']);
+  if(firstCut) badges.push(['', '생애최초 감면 ' + comma(firstCut) + '원']);
+
+  notes.push('<b>신고납부기한</b> 취득일부터 60일 이내(상속은 상속개시일이 속한 달의 말일부터 6개월). 넘기면 무신고가산세 20%와 납부지연가산세가 붙습니다.');
+  if(cause === 'buy' && isHouse) notes.push('일시적 2주택은 종전 주택을 기한 내 처분하는 조건으로 <b>1주택 세율</b>이 적용됩니다. 처분하지 못하면 차액을 추징당합니다.');
+  if(cause === 'gift') notes.push('증여받으면 증여세와 <b>별도로</b> 취득세를 냅니다. 과세표준은 원칙적으로 시가인정액이며, 시가를 알 수 없으면 시가표준액을 씁니다.');
+  if(cause === 'inherit') notes.push('상속취득은 주택 수와 무관하게 중과되지 않습니다. 무주택 1가구가 상속받으면 0.8%로 낮아집니다.');
+  notes.push('단순 참고용 계산입니다. 임대주택 감면, 농지 감면, 조합원 취득, 부동산 외 자산(차량 · 회원권)은 반영하지 않았습니다.');
+
+  renderLedger(T_IDS, { rows:rows, badges:badges, notes:notes,
+    krw: korean(total) || '0원', title:'취득세 계산 결과', slug:'acquisition-tax' });
+}
+
+/* ================= 증여 vs 상속 비교 ================= */
+var cChild = 2;
+var C_IDS = { out:'cOut', stale:'cStale', badges:'cBadges', foot:'cFoot', pdfbar:'cPdfbar', dateNote:'cDateNote' };
+var C_EMPTY = '<b>재산가액과 증여할 금액을 입력하세요</b>세 가지 경우의 세금을 나란히 놓고<br>얼마나 차이 나는지 보여드립니다.';
+
+function quickGift(amount, relKey){
+  var ded = Math.min(GIFT_DED[relKey][0], amount);
+  var base = Math.max(0, amount - ded);
+  var t = base > 0 ? gsProgressive(base).tax : 0;
+  return { base:base, calc:t, pay:Math.max(0, t - Math.floor(t * 0.03)), ded:ded };
+}
+function quickInherit(estate, hasSpouse, children){
+  var lump = (hasSpouse && children === 0) ? 200000000
+           : Math.max(500000000, 200000000 + children * 50000000);
+  var spouseDed = 0;
+  if(hasSpouse){
+    var share = children > 0 ? 1.5 / (1.5 + children) : 1;
+    spouseDed = Math.max(500000000, Math.min(estate * share, 3000000000));
+  }
+  var ded = Math.min(lump + spouseDed, estate);
+  var base = Math.max(0, estate - ded);
+  var t = base > 0 ? gsProgressive(base).tax : 0;
+  return { base:base, calc:t, pay:Math.max(0, t - Math.floor(t * 0.03)), ded:ded };
+}
+
+function cHints(){
+  $('cEstateK').textContent = korean(num($('cEstate')));
+  $('cGiftK').textContent = korean(num($('cGift')));
+}
+function cInput(){ cHints(); if(RPT.rows.length && current === 'compare') $('cStale').style.display = ''; }
+
+function cRun(){
+  cHints();
+  var estate = num($('cEstate')), gift = num($('cGift'));
+  if(!estate){ clearLedger(C_IDS, C_EMPTY); toast('총 재산가액을 입력하세요'); $('cEstate').focus(); return; }
+  if(gift > estate){ gift = estate; $('cGift').value = comma(gift); }
+
+  var hasSpouse = $('cSpouse').checked;
+  var rel = $('cRel').value;
+  var relName = GIFT_DED[rel][1];
+
+  /* A. 전부 상속 */
+  var A = quickInherit(estate, hasSpouse, cChild);
+
+  /* B. 증여 후 10년 경과 — 합산되지 않음 */
+  var gB = quickGift(gift, rel);
+  var iB = quickInherit(Math.max(0, estate - gift), hasSpouse, cChild);
+  var totalB = gB.pay + iB.pay;
+
+  /* C. 증여 후 10년 내 상속 — 합산 후 증여세액공제 */
+  var gC = gB;
+  var iCfull = quickInherit(estate, hasSpouse, cChild);
+  var share = iCfull.base > 0 ? Math.min(gift / iCfull.base, 1) : 0;
+  var creditCap = iCfull.calc * share;
+  var credit = Math.min(gC.calc, creditCap);
+  var afterC = Math.max(0, iCfull.calc - credit);
+  var iCpay = Math.max(0, afterC - Math.floor(afterC * 0.03));
+  var totalC = gC.pay + iCpay;
+
+  var save = A.pay - totalB;
+  var rows = [], badges = [], notes = [];
+
+  rows.push(['','','① 전부 상속으로 이전','사전증여 없이 그대로 물려줌', '', 'sum']);
+  rows.push(['','','상속세 과세표준','공제 ' + comma(A.ded) + '원 차감 후', won(A.base)]);
+  rows.push(['','','상속세','신고세액공제 3% 반영', won(A.pay), 'sum']);
+
+  rows.push(['','','② 증여 후 10년 경과','합산되지 않음 — 가장 유리', '', 'sum']);
+  rows.push(['','','증여세', relName + ' · 공제 ' + comma(gB.ded) + '원', won(gB.pay)]);
+  rows.push(['','','남은 재산 상속세', won(Math.max(0, estate - gift)) + ' 기준', won(iB.pay)]);
+  rows.push(['','','합계','', won(totalB), 'sum']);
+
+  rows.push(['','','③ 증여 후 10년 내 상속','합산 후 증여세액공제', '', 'sum']);
+  rows.push(['','','증여세','', won(gC.pay)]);
+  rows.push(['','','상속세', '증여세액공제 ' + comma(Math.round(credit)) + '원 차감', won(iCpay)]);
+  rows.push(['','','합계','', won(totalC), 'sum']);
+
+  rows.push(['','','10년을 넘겼을 때 절세액','① − ②', won(Math.max(0, save)), 'final']);
+
+  if(save > 0) badges.push(['', '10년 경과 시 ' + comma(Math.round(save)) + '원 절세']);
+  else if(save < 0) badges.push(['warn', '사전증여가 오히려 ' + comma(Math.round(-save)) + '원 불리']);
+  else badges.push(['grey', '차이 없음']);
+  badges.push(['grey', '재산 ' + korean(estate) + ' · 증여 ' + korean(gift)]);
+
+  notes.push('<b>10년이 갈림길입니다.</b> 증여 후 10년이 지나면 상속재산에 합산되지 않지만, 10년 안에 상속이 개시되면 증여 당시 가액으로 합산되고 낸 증여세는 한도 내에서만 공제됩니다.');
+  notes.push('<b>가치 상승분은 계산에 없습니다.</b> 합산할 때는 증여 당시 가액을 쓰므로, 증여 후 오른 값은 상속세 대상에서 빠집니다. 앞으로 오를 자산일수록 사전증여 실익이 커집니다. 이 비교는 가액이 그대로라는 가정입니다.');
+  notes.push('상속공제는 일괄공제와 배우자상속공제(법정상속분 기준)만 반영했습니다. 금융재산 · 동거주택 공제와 사전증여로 인한 상속공제 종합한도 축소는 계산에 넣지 않았습니다.');
+  notes.push('증여 시 부동산이라면 <b>취득세</b>가 별도로 발생합니다. 취득세 계산기에서 함께 확인하십시오.');
+
+  renderLedger(C_IDS, { rows:rows, badges:badges, notes:notes,
+    krw: save > 0 ? ('절세 ' + korean(save)) : '', title:'증여 vs 상속 비교', slug:'gift-vs-inherit' });
 }
 
 /* ================= 종합부동산세 ================= */
@@ -2410,6 +2887,47 @@ Array.prototype.forEach.call($('sChildSeg').querySelectorAll('button'), function
     sInput();
   });
 });
+['tPrice','cEstate','cGift'].forEach(function(id){
+  $(id).addEventListener('input', function(){
+    var raw = digits($(id).value); if(raw.length>15) raw = raw.slice(0,15);
+    $(id).value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+    if(id === 'tPrice') tInput(); else cInput();
+  });
+});
+['tCause','tKind','tAdj','tArea','tFirst','tNoHome'].forEach(function(id){ $(id).addEventListener('change', tInput); });
+Array.prototype.forEach.call($('tCntSeg').querySelectorAll('button'), function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('tCntSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true'); tCount = parseInt(b.getAttribute('data-v'),10); tInput();
+  });
+});
+$('tCalc').addEventListener('click', function(){ tRun(); if(window.innerWidth < 940) document.querySelector('#scr-chwideuk .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
+$('tReset').addEventListener('click', function(){
+  $('tPrice').value=''; $('tCause').value='buy'; $('tKind').value='house';
+  ['tAdj','tArea','tFirst','tNoHome'].forEach(function(id){ $(id).checked=false; });
+  tCount=1;
+  Array.prototype.forEach.call($('tCntSeg').querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', x.getAttribute('data-v')==='1' ? 'true':'false'); });
+  tHints(); clearLedger(T_IDS, T_EMPTY);
+});
+$('tRateHelp').addEventListener('click', function(){ openModal($('trateMask')); });
+$('tBaseHelp').addEventListener('click', function(){ openModal($('tbaseMask')); });
+
+['cSpouse','cRel'].forEach(function(id){ $(id).addEventListener('change', cInput); });
+Array.prototype.forEach.call($('cChildSeg').querySelectorAll('button'), function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('cChildSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true'); cChild = parseInt(b.getAttribute('data-v'),10); cInput();
+  });
+});
+$('cCalc').addEventListener('click', function(){ cRun(); if(window.innerWidth < 940) document.querySelector('#scr-compare .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
+$('cReset').addEventListener('click', function(){
+  $('cEstate').value=''; $('cGift').value=''; $('cSpouse').checked=true; $('cRel').value='linealAdult'; cChild=2;
+  Array.prototype.forEach.call($('cChildSeg').querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', x.getAttribute('data-v')==='2' ? 'true':'false'); });
+  cHints(); clearLedger(C_IDS, C_EMPTY);
+});
+
 ['jPrice'].forEach(function(id){
   $(id).addEventListener('input', function(){
     var raw = digits($(id).value); if(raw.length>15) raw = raw.slice(0,15);
@@ -2466,7 +2984,7 @@ $('lReset').addEventListener('click', function(){
   lHints(); clearLedger(L_IDS, L_EMPTY);
 });
 $('lTypeHelp').addEventListener('click', function(){ openModal($('ltypeMask')); });
-['jOut','lOut'].forEach(function(id){
+['jOut','lOut','tOut','cOut'].forEach(function(id){
   $(id).addEventListener('click', function(e){
     var b = e.target;
     while(b && b !== this && !b.getAttribute) b = b.parentNode;
@@ -2507,6 +3025,7 @@ $('gPriorHelp').addEventListener('click', function(){ openModal($('gpriorMask'))
 $('sPriorHelp').addEventListener('click', function(){ openModal($('spriorMask')); });
 $('gDedHelp').addEventListener('click', function(){ openModal($('gdedMask')); });
 $('gCreditHelp').addEventListener('click', function(){ openModal($('gcreditMask')); });
+$('gCarryHelp').addEventListener('click', function(){ openModal($('carryMask')); });
 $('sCreditHelp').addEventListener('click', function(){ openModal($('gcreditMask')); });
 $('sDedHelp').addEventListener('click', function(){ openModal($('sdedMask')); });
 
@@ -3118,6 +3637,8 @@ gHints();
 sHints();
 jHints();
 lHints();
+tHints();
+cHints();
 go('home');
 })();
 </script>
