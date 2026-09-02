@@ -142,7 +142,13 @@ h1{
   padding:11px 16px 3px;border-top:1px solid var(--rule-2);margin-top:6px;
   font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:8px;
 }
-.mver b{font-weight:700;color:var(--ink-2)}
+.mver b{font-weight:700;color:var(--ink-2);flex-shrink:0}
+.mver span{flex:1;min-width:0}
+.mver button{
+  border:1px solid var(--rule);background:#fff;border-radius:9px;padding:6px 10px;
+  font-family:inherit;font-size:11px;font-weight:700;color:var(--ink-2);cursor:pointer;flex-shrink:0;
+}
+.mver button:hover{border-color:var(--pine);color:var(--pine)}
 
 /* 홈 화면 */
 .homehero{padding:16px 0 20px;text-align:center}
@@ -429,8 +435,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
    본 스크립트에서 무슨 일이 생겨도 앱이 곧바로 꺼지지 않도록 독립적으로 동작한다. */
 (function(){
   window.__pushes = 0;
+  var BASE = location.pathname + location.search;
   function guard(){
-    try{ history.pushState({ g:Date.now() }, ''); window.__pushes++; }catch(e){}
+    /* 주소에 표식(#s)을 붙여 브라우저가 '진짜 이동'으로 처리하게 한다 */
+    try{ history.pushState({ g:Date.now() }, '', BASE + '#s'); window.__pushes++; }catch(e){}
   }
   window.__guard = guard;
   try{ history.replaceState({ g:0 }, ''); }catch(e){}
@@ -438,10 +446,17 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   /* 로딩 도중에 쌓은 항목은 브라우저가 합쳐버리는 경우가 있어 완료 후 다시 심는다 */
   document.addEventListener('DOMContentLoaded', guard);
   window.addEventListener('load', function(){ setTimeout(guard, 300); });
-  window.addEventListener('popstate', function(){
+  window.__pops = 0;
+  function handleBack(){
+    window.__pops++;
     if(window.__exiting) return;                       // 종료 중 — 그대로 빠져나간다
     if(typeof window.__onPop === 'function'){ window.__onPop(); return; }
     guard();                                           // 본 스크립트가 아직이면 이탈만 막는다
+  }
+  window.addEventListener('popstate', handleBack);
+  /* popstate 가 전달되지 않는 기기를 위한 보조 감지 */
+  window.addEventListener('hashchange', function(){
+    if(!location.hash && !window.__exiting) handleBack();
   });
 })();
 
@@ -477,7 +492,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
   <button class="mitem" type="button" data-go="jongbu"><span class="dot"></span>종합부동산세<small>주택분</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
-  <div class="mver"><b>버전 2026.09.02</b><span id="verBack">뒤로가기 확인 중</span></div>
+  <div class="mver">
+    <b>버전 2026.09.03</b>
+    <span id="verBack">확인 중</span>
+    <button type="button" id="backTest">뒤로가기 시험</button>
+  </div>
 </nav>
 
 <div class="wrap">
@@ -2049,7 +2068,10 @@ function go(key, fromPop){
   if(typeof disarmExit === 'function') disarmExit();
   window.scrollTo(0, 0);
 }
-function openMenu(){ $('menu').classList.add('on'); $('menuMask').classList.add('on'); }
+function openMenu(){
+  $('menu').classList.add('on'); $('menuMask').classList.add('on');
+  if(typeof refreshDiag === 'function') refreshDiag();
+}
 function closeMenu(){ $('menu').classList.remove('on'); $('menuMask').classList.remove('on'); }
 
 /* ---------------- 공통 결과 렌더 ---------------- */
@@ -3683,13 +3705,23 @@ function onPop(){
 }
 
 window.__onPop = onPop;      // 앞서 심어둔 감시자가 이 함수를 호출한다
-/* 방어막이 실제로 걸렸는지 메뉴 하단에 표시한다 */
-setTimeout(function(){
+/* 방어막 상태를 메뉴 하단에 표시한다 */
+function refreshDiag(){
   var el = $('verBack');
   if(!el) return;
-  el.textContent = (window.__pushes > 0) ? ('뒤로가기 방어 ' + window.__pushes + '단계') : '뒤로가기 방어 실패';
-  el.style.color = (window.__pushes > 0) ? 'var(--pine)' : 'var(--flag)';
-}, 1500);
+  var ok = (window.__pushes > 0) && (typeof window.__onPop === 'function');
+  el.textContent = ok
+    ? ('방어 ' + window.__pushes + '단계 · 처리기 연결됨 · 뒤로가기 ' + (window.__pops || 0) + '회 감지')
+    : ((window.__pushes > 0) ? '처리기 연결 실패' : '방어 실패 — 기록 조작 차단됨');
+  el.style.color = ok ? 'var(--pine)' : 'var(--flag)';
+}
+setTimeout(refreshDiag, 1500);
+$('backTest').addEventListener('click', function(e){
+  e.stopPropagation();
+  closeMenu();
+  toast('뒤로가기 신호를 보냈습니다', 1600);
+  setTimeout(function(){ try{ history.back(); }catch(err){} }, 300);
+});
 
 syncVisibility();
 refreshHints();
