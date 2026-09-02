@@ -104,6 +104,10 @@ h1{
   display:flex;align-items:center;justify-content:center;
 }
 .menubtn:hover{border-color:var(--pine)}
+.menubtn{margin-left:0}
+#menuBtn{margin-left:auto}
+.arrow-btn svg{width:20px;height:20px;color:var(--ink-2)}
+.arrow-btn:hover svg{color:var(--pine)}
 .menubtn span{display:block;width:16px;height:2px;background:var(--ink-2);border-radius:2px;position:relative}
 .menubtn span::before,.menubtn span::after{
   content:'';position:absolute;left:0;width:16px;height:2px;background:var(--ink-2);border-radius:2px;
@@ -476,8 +480,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 
 <header>
   <div class="wrap hdrow">
-    <button class="menubtn" type="button" id="menuBtn" aria-label="메뉴" style="display:none"><span></span></button>
+    <button class="menubtn arrow-btn" type="button" id="backBtn" aria-label="뒤로" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 5 8 12 15 19"/></svg>
+    </button>
     <h1 id="pageTitle">세금계산기</h1>
+    <button class="menubtn" type="button" id="menuBtn" aria-label="메뉴" style="display:none"><span></span></button>
   </div>
 </header>
 
@@ -492,11 +499,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
   <button class="mitem" type="button" data-go="jongbu"><span class="dot"></span>종합부동산세<small>주택분</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
-  <div class="mver">
-    <b>버전 2026.09.03</b>
-    <span id="verBack">확인 중</span>
-    <button type="button" id="backTest">뒤로가기 시험</button>
-  </div>
+  <div class="mver"><b>버전 2026.09.04</b><span id="verBack"></span></div>
 </nav>
 
 <div class="wrap">
@@ -2061,6 +2064,7 @@ function go(key, fromPop){
   for(var k in SCREENS){ $(SCREENS[k].el).style.display = (k === key) ? '' : 'none'; }
   $('pageTitle').textContent = SCREENS[key].title;
   $('menuBtn').style.display = (key === 'home') ? 'none' : '';
+  $('backBtn').style.display  = (key === 'home') ? 'none' : '';
   Array.prototype.forEach.call(document.querySelectorAll('#menu .mitem'), function(b){
     b.setAttribute('aria-current', b.getAttribute('data-go') === key ? 'true' : 'false');
   });
@@ -3107,6 +3111,10 @@ $('sDedHelp').addEventListener('click', function(){ openModal($('sdedMask')); })
 Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function(b){
   b.addEventListener('click', function(){ go(b.getAttribute('data-go')); });
 });
+$('backBtn').addEventListener('click', function(){
+  if(overlayOpen()){ closeOverlays(); return; }
+  go('home');
+});
 $('menuBtn').addEventListener('click', openMenu);
 $('menuClose').addEventListener('click', closeMenu);
 $('menuMask').addEventListener('click', closeMenu);
@@ -3708,20 +3716,9 @@ window.__onPop = onPop;      // 앞서 심어둔 감시자가 이 함수를 호�
 /* 방어막 상태를 메뉴 하단에 표시한다 */
 function refreshDiag(){
   var el = $('verBack');
-  if(!el) return;
-  var ok = (window.__pushes > 0) && (typeof window.__onPop === 'function');
-  el.textContent = ok
-    ? ('방어 ' + window.__pushes + '단계 · 처리기 연결됨 · 뒤로가기 ' + (window.__pops || 0) + '회 감지')
-    : ((window.__pushes > 0) ? '처리기 연결 실패' : '방어 실패 — 기록 조작 차단됨');
-  el.style.color = ok ? 'var(--pine)' : 'var(--flag)';
+  if(el) el.textContent = '상속 · 증여 · 부동산 세금 계산';
 }
-setTimeout(refreshDiag, 1500);
-$('backTest').addEventListener('click', function(e){
-  e.stopPropagation();
-  closeMenu();
-  toast('뒤로가기 신호를 보냈습니다', 1600);
-  setTimeout(function(){ try{ history.back(); }catch(err){} }, 300);
-});
+setTimeout(refreshDiag, 800);
 
 syncVisibility();
 refreshHints();
