@@ -450,6 +450,20 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   /* 로딩 도중에 쌓은 항목은 브라우저가 합쳐버리는 경우가 있어 완료 후 다시 심는다 */
   document.addEventListener('DOMContentLoaded', guard);
   window.addEventListener('load', function(){ setTimeout(guard, 300); });
+
+  /* 크롬은 사용자 조작 없이 스크립트가 만든 기록 항목을 '건너뛸 항목'으로 표시한다.
+     그래서 로딩 중에 심은 방어막은 뒤로가기 때 통째로 무시된다.
+     실제 터치가 일어난 직후에 다시 심어야 정상 항목으로 인정된다. */
+  function onFirstTouch(){
+    guard();
+    window.__armed = true;
+    document.removeEventListener('pointerdown', onFirstTouch, true);
+    document.removeEventListener('touchstart', onFirstTouch, true);
+    document.removeEventListener('click', onFirstTouch, true);
+  }
+  document.addEventListener('pointerdown', onFirstTouch, true);
+  document.addEventListener('touchstart', onFirstTouch, true);
+  document.addEventListener('click', onFirstTouch, true);
   window.__pops = 0;
   function handleBack(){
     window.__pops++;
@@ -499,7 +513,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
   <button class="mitem" type="button" data-go="jongbu"><span class="dot"></span>종합부동산세<small>주택분</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
-  <div class="mver"><b>버전 2026.09.04</b><span id="verBack"></span></div>
+  <div class="mver"><b>버전 2026.09.05</b><span id="verBack"></span></div>
 </nav>
 
 <div class="wrap">
@@ -2070,10 +2084,13 @@ function go(key, fromPop){
   });
   closeMenu();
   if(typeof disarmExit === 'function') disarmExit();
+  /* 사용자 조작 직후이므로 여기서 심는 항목은 크롬이 건너뛰지 않는다 */
+  if(!fromPop && window.__guard) window.__guard();
   window.scrollTo(0, 0);
 }
 function openMenu(){
   $('menu').classList.add('on'); $('menuMask').classList.add('on');
+  if(window.__guard) window.__guard();
   if(typeof refreshDiag === 'function') refreshDiag();
 }
 function closeMenu(){ $('menu').classList.remove('on'); $('menuMask').classList.remove('on'); }
@@ -2205,7 +2222,10 @@ function syncVisibility(){
 }
 
 /* 모달 */
-function openModal(m){ m.classList.add('on'); document.body.style.overflow='hidden'; }
+function openModal(m){
+  m.classList.add('on'); document.body.style.overflow='hidden';
+  if(window.__guard) window.__guard();
+}
 function closeModal(m){ m.classList.remove('on'); document.body.style.overflow=''; }
 $('exHelp').addEventListener('click', function(){ openModal($('exMask')); });
 $('liveHelp').addEventListener('click', function(){ openModal($('liveMask')); });
