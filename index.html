@@ -438,41 +438,40 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 /* 뒤로가기 방어를 가장 먼저 심는다.
    본 스크립트에서 무슨 일이 생겨도 앱이 곧바로 꺼지지 않도록 독립적으로 동작한다. */
 (function(){
-  window.__pushes = 0;
   var BASE = location.pathname + location.search;
-  function guard(){
-    /* 주소에 표식(#s)을 붙여 브라우저가 '진짜 이동'으로 처리하게 한다 */
-    try{ history.pushState({ g:Date.now() }, '', BASE + '#s'); window.__pushes++; }catch(e){}
-  }
-  window.__guard = guard;
-  try{ history.replaceState({ g:0 }, ''); }catch(e){}
-  guard();
-  /* 로딩 도중에 쌓은 항목은 브라우저가 합쳐버리는 경우가 있어 완료 후 다시 심는다 */
-  document.addEventListener('DOMContentLoaded', guard);
-  window.addEventListener('load', function(){ setTimeout(guard, 300); });
+  var DEPTH = 4;                 // 유지할 방어막 두께
 
-  /* 크롬은 사용자 조작 없이 스크립트가 만든 기록 항목을 '건너뛸 항목'으로 표시한다.
-     그래서 로딩 중에 심은 방어막은 뒤로가기 때 통째로 무시된다.
-     실제 터치가 일어난 직후에 다시 심어야 정상 항목으로 인정된다. */
-  function onFirstTouch(){
-    guard();
-    window.__armed = true;
-    document.removeEventListener('pointerdown', onFirstTouch, true);
-    document.removeEventListener('touchstart', onFirstTouch, true);
-    document.removeEventListener('click', onFirstTouch, true);
+  /* 현재 방어막이 몇 겹 남았는지는 기록 항목에 직접 적어 둔다.
+     크롬이 항목 일부를 건너뛰어도 이 값으로 실제 위치를 알 수 있다. */
+  function depth(){
+    try{ return (history.state && history.state.d) || 0; }catch(e){ return 0; }
   }
-  document.addEventListener('pointerdown', onFirstTouch, true);
-  document.addEventListener('touchstart', onFirstTouch, true);
-  document.addEventListener('click', onFirstTouch, true);
-  window.__pops = 0;
+  function push(){
+    try{ history.pushState({ d: depth() + 1 }, '', BASE + '#s'); }catch(e){}
+  }
+  /* 크롬은 사용자 조작 없이 만든 기록 항목을 '건너뛸 항목'으로 표시한다.
+     그래서 터치가 일어난 순간에만 미리 여러 겹을 쌓아 둔다. */
+  function topUp(){
+    var n = 0;
+    while(depth() < DEPTH && n++ < DEPTH + 2) push();
+  }
+  window.__guard = topUp;
+  window.__depth = depth;
+
+  try{ history.replaceState({ d:0 }, ''); }catch(e){}
+  push();
+  document.addEventListener('DOMContentLoaded', topUp);
+  window.addEventListener('load', function(){ setTimeout(topUp, 300); });
+  ['pointerdown','touchstart','click','keydown'].forEach(function(ev){
+    document.addEventListener(ev, topUp, true);
+  });
+
   function handleBack(){
-    window.__pops++;
-    if(window.__exiting) return;                       // 종료 중 — 그대로 빠져나간다
+    if(window.__exiting) return;                        // 종료 중 — 그대로 빠져나간다
     if(typeof window.__onPop === 'function'){ window.__onPop(); return; }
-    guard();                                           // 본 스크립트가 아직이면 이탈만 막는다
+    push();                                             // 본 스크립트가 아직이면 이탈만 막는다
   }
   window.addEventListener('popstate', handleBack);
-  /* popstate 가 전달되지 않는 기기를 위한 보조 감지 */
   window.addEventListener('hashchange', function(){
     if(!location.hash && !window.__exiting) handleBack();
   });
@@ -513,7 +512,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
   <button class="mitem" type="button" data-go="jongbu"><span class="dot"></span>종합부동산세<small>주택분</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
-  <div class="mver"><b>버전 2026.09.05</b><span id="verBack"></span></div>
+  <div class="mver"><b>버전 2026.09.06</b><span id="verBack"></span></div>
 </nav>
 
 <div class="wrap">
@@ -2085,7 +2084,7 @@ function go(key, fromPop){
   closeMenu();
   if(typeof disarmExit === 'function') disarmExit();
   /* 사용자 조작 직후이므로 여기서 심는 항목은 크롬이 건너뛰지 않는다 */
-  if(!fromPop && window.__guard) window.__guard();
+  if(!fromPop && window.__guard) window.__guard();   // 터치 직후이므로 정상 항목으로 인정된다
   window.scrollTo(0, 0);
 }
 function openMenu(){
@@ -3694,6 +3693,7 @@ try{
 var exitArmed = false, exitTimer = null;
 
 function guard(){ if(window.__guard) window.__guard(); }
+function navDepth(){ return window.__depth ? window.__depth() : 0; }
 function overlayOpen(){
   return !!document.querySelector('.mask.on') || $('menu').classList.contains('on');
 }
@@ -3707,18 +3707,21 @@ function disarmExit(){
 }
 
 function onPop(){
+  /* 뒤로가기 처리 중에 쌓는 항목은 크롬이 건너뛰므로 여기서는 쌓지 않는다.
+     터치할 때 미리 쌓아 둔 방어막을 한 겹씩 소비한다. */
+
   /* 1단계 — 열려 있는 팝업이나 메뉴부터 닫는다 */
-  if(overlayOpen()){ guard(); closeOverlays(); disarmExit(); return; }
+  if(overlayOpen()){ closeOverlays(); disarmExit(); return; }
 
   /* 2단계 — 계산기 화면이면 홈으로 */
-  if(current !== 'home'){ guard(); go('home', true); disarmExit(); return; }
+  if(current !== 'home'){ go('home', true); disarmExit(); return; }
 
   /* 3단계 — 홈에서 두 번 누르면 종료 */
   if(exitArmed){
     disarmExit();
     window.__exiting = true;                 // 다음 뒤로가기는 막지 않는다
     try{ window.close(); }catch(e){}
-    var back = (window.__pushes || 1) + 1;   // 우리가 쌓아둔 항목을 한 번에 건너뛴다
+    var back = navDepth() + 1;               // 남은 방어막을 한 번에 건너뛴다
     setTimeout(function(){ try{ history.go(-back); }catch(e){} }, 60);
     setTimeout(function(){                   // 닫히지 않았으면 원래대로
       window.__exiting = false;
