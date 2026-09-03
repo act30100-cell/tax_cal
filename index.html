@@ -348,16 +348,29 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .badge.warn{background:var(--flag-soft);color:var(--flag)}
 .badge.grey{background:#EEF1EE;color:var(--ink-3)}
 
-.ustep{
-  margin:0 0 10px;font-size:12.5px;color:var(--ink-2);line-height:1.72;
-  text-indent:-30px;padding-left:30px;
-}
+.ustep{display:flex;align-items:flex-start;gap:10px;margin:0 0 14px}
 .ustep i{
-  display:inline-block;width:21px;height:21px;line-height:21px;border-radius:50%;
+  width:22px;height:22px;line-height:22px;flex-shrink:0;border-radius:50%;
   background:var(--pine-soft);color:var(--pine);font-style:normal;font-size:11.5px;
-  font-weight:800;text-align:center;margin-right:9px;vertical-align:-4px;text-indent:0;
+  font-weight:800;text-align:center;
 }
+.ustep span{flex:1;min-width:0;font-size:13px;color:var(--ink);line-height:1.45}
 .ustep b{font-weight:800;color:var(--ink)}
+.ustep em{
+  display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);
+  line-height:1.45;margin-top:3px;
+}
+.uinfo{
+  background:var(--pine-soft);border-radius:13px;padding:13px 15px;margin-top:14px;
+}
+.uinfo p{display:flex;gap:9px;margin:0 0 6px;font-size:12.5px;color:#14513F;line-height:1.55}
+.uinfo p b{flex-shrink:0;font-weight:400;color:#2E7A67}
+.uinfo p span{flex:1;min-width:0}
+.uinfo p em{font-style:normal;font-weight:800}
+.uinfo .uend{
+  display:block;margin:10px 0 0;padding-top:9px;border-top:1px solid #CBDED6;
+  font-size:11.5px;color:#3D6E60;line-height:1.6;
+}
 .info{
   background:var(--pine-soft);border-radius:13px;padding:12px 14px;
   font-size:12.5px;color:#14513F;line-height:1.65;
@@ -1162,10 +1175,15 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <section class="card">
     <div class="hd"><span class="idx">?</span><h2>사용방법</h2><button class="help" id="cHowHelp" type="button" aria-label="자세히 보기" style="margin-left:auto">?</button></div>
     <div class="bd">
-      <p class="ustep"><i>1</i><b>물려줄 재산 전체</b>를 넣으세요. 증여할 금액이 아니라 총 재산입니다.</p>
-      <p class="ustep"><i>2</i>그중 <b>지금 미리 증여할 금액</b>을 넣고, 나눠 줄 사람 수를 고르세요.</p>
-      <p class="ustep" style="margin-bottom:13px"><i>3</i>비교하기를 누르면 <b>세 갈래</b>의 세금이 한 화면에 나옵니다.</p>
-      <div class="info">① 증여 없이 전부 상속 &nbsp;·&nbsp; ② 증여 후 <b>10년을 넘겨</b> 상속 &nbsp;·&nbsp; ③ 증여 후 <b>10년 안에</b> 상속<br>보통 ②가 가장 유리하고, ③은 ①과 거의 같아집니다. 그 차이가 사전증여의 실익입니다.</div>
+      <div class="ustep"><i>1</i><span><b>물려줄 재산 전체</b>를 넣으세요<em>증여할 금액이 아니라 총 재산입니다</em></span></div>
+      <div class="ustep"><i>2</i><span><b>증여할 금액</b>과 사람 수를 고르세요<em>여러 명에게 나누면 세금이 줄어듭니다</em></span></div>
+      <div class="ustep"><i>3</i><span><b>비교하기</b>를 누르세요<em>세 갈래 결과가 한 화면에 나옵니다</em></span></div>
+      <div class="uinfo">
+        <p><b>①</b><span>증여 없이 전부 상속</span></p>
+        <p><b>②</b><span>증여 후 <em>10년을 넘겨</em> 상속</span></p>
+        <p><b>③</b><span>증여 후 <em>10년 안에</em> 상속</span></p>
+        <p class="uend">보통 ②가 가장 유리하고 ③은 ①과 거의 같아집니다. 그 차이가 사전증여의 실익입니다.</p>
+      </div>
     </div>
   </section>
 
