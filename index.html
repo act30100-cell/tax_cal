@@ -718,9 +718,18 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       </div>
 
       <div class="field" id="adjSaleWrap" style="display:none">
-        <label class="chk"><input type="checkbox" id="adjSale">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="adjSale">
           <span>양도 당시 조정대상지역에 소재
             <em>중과세율과 장기보유특별공제 배제 여부를 가릅니다</em></span></label>
+        <label class="chk"><input type="checkbox" id="tempTwo">
+          <span>일시적 2주택 <button class="help" id="tempHelp" type="button" aria-label="설명" style="vertical-align:1px">?</button>
+            <em>새 집을 사고 종전 주택을 기한 안에 파는 경우. 1주택으로 보아 비과세와 일반세율을 적용합니다</em></span></label>
+      </div>
+
+      <div class="field" id="sangWrap">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="sangsaeng">
+          <span>상생임대주택 특례 <button class="help" id="sangHelp" type="button" aria-label="설명" style="vertical-align:1px">?</button>
+            <em>임대료를 5% 이내로 올린 임대주택은 2년 거주요건이 면제됩니다</em></span></label>
       </div>
 
       <div class="field" id="liveNote" style="display:none">
@@ -1308,9 +1317,14 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <button type="button" data-v="3" aria-pressed="false">3주택 이상<small>중과세율</small></button>
         </div>
       </div>
-      <div class="field" id="jSoleWrap" style="margin-bottom:0">
+      <div class="field" id="jSoleWrap">
         <label class="chk" style="padding-top:0"><input type="checkbox" id="jSole" checked>
           <span>1세대 1주택자 단독명의<em>기본공제 12억원과 연령 · 보유 세액공제를 적용합니다. 부부공동명의는 각자 9억원씩 공제받거나 특례를 신청할 수 있습니다</em></span></label>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="jPrev">직전 연도 <b style="color:var(--flag)">재산세 + 종부세 합계</b> <button class="help" id="jCapHelp" type="button" aria-label="세부담상한 설명">?</button><span style="font-weight:400;color:var(--ink-3)">선택</span></label>
+        <div class="unit"><input type="text" id="jPrev" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="jPrevK"></div>
       </div>
     </div>
   </section>
@@ -1741,6 +1755,60 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>산출세액 130만원까지는 55%, 초과분은 30%를 깎아 줍니다. 다만 총급여가 높을수록 한도가 줄어 3,300만원 이하는 74만원, 1억 2천만원을 넘으면 최소 20만원까지 내려갑니다.</p>
 
       <div class="callout"><p><b>이 계산은 근사치입니다.</b> 실제로 매달 떼는 금액은 국세청 <b>근로소득 간이세액표</b>를 따르고, 의료비 · 신용카드 · 연금저축 · 주택자금 같은 개별 공제는 연말정산에서 반영됩니다. 그래서 실제 연간 세금은 이 계산보다 적게 나오는 경우가 많습니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 일시적 2주택 모달 ============ -->
+<div class="mask" id="tempMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tpTitle">
+    <div class="mhd"><h3 id="tpTitle">일시적 2주택</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>이사 때문에 잠시 두 채가 되는 것까지 다주택으로 보지는 않습니다. 요건을 갖추면 <b>1주택으로 보아</b> 비과세와 일반세율을 적용합니다.</p>
+      <h4>세 가지 요건</h4>
+      <ul>
+        <li>종전 주택을 취득하고 <b>1년이 지난 뒤</b> 새 주택을 취득할 것</li>
+        <li>종전 주택을 <b>2년 이상 보유</b>할 것 (조정지역 취득분은 2년 거주도 필요)</li>
+        <li>새 주택 취득일부터 <b>3년 안에</b> 종전 주택을 팔 것</li>
+      </ul>
+      <p>처분기한은 2023년 1월 12일 이후 양도분부터 지역과 무관하게 <b>3년</b>으로 통일되었습니다. 그 전에는 조정지역 간 이동이면 2년이었습니다.</p>
+      <div class="callout"><p><b>기한을 넘기면 추징됩니다.</b> 비과세로 신고했다가 3년 안에 처분하지 못하면 비과세가 취소되고 가산세까지 붙습니다. 매도가 지연될 가능성이 있으면 기한을 먼저 확인하십시오.</p></div>
+      <p>재개발·재건축으로 인한 대체주택, 상속으로 인한 2주택, 동거봉양·혼인 합가는 각각 다른 특례가 적용됩니다. 이 계산기는 일반적인 이사 목적 일시적 2주택만 다룹니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 상생임대주택 모달 ============ -->
+<div class="mask" id="sangMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sgTitle">
+    <div class="mhd"><h3 id="sgTitle">상생임대주택 특례</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>임대료를 적게 올린 집주인에게 <b>2년 거주요건을 면제</b>해 주는 제도입니다. 조정대상지역에서 취득해 거주요건이 걸린 경우에 실익이 큽니다.</p>
+      <h4>요건</h4>
+      <ul>
+        <li>직전 임대차계약 대비 임대료를 <b>5% 이내</b>로 올려 새로 계약할 것</li>
+        <li>직전 계약으로 <b>1년 6개월 이상</b> 임대했을 것</li>
+        <li>새 계약(상생임대차계약)으로 <b>2년 이상</b> 임대할 것</li>
+        <li>상생임대차계약을 2021년 12월 20일부터 2026년 12월 31일 사이에 체결할 것</li>
+      </ul>
+      <h4>무엇이 면제되나</h4>
+      <p>비과세를 받기 위한 2년 거주요건과, 장기보유특별공제 1세대 1주택 표를 적용받기 위한 2년 거주요건이 모두 면제됩니다.</p>
+      <div class="callout"><p><b>공제율까지 채워주지는 않습니다.</b> 표를 쓸 자격만 생기고, 거주기간에 따른 공제율은 <b>실제로 산 기간</b>으로 계산합니다. 한 번도 살지 않았다면 거주분 공제는 0%이고 보유분만 받습니다.</p></div>
+      <p>직전 임대차계약은 그 주택을 취득한 뒤 체결한 것이어야 합니다. 매수하면서 승계받은 임대차계약은 직전 계약으로 인정되지 않습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 세부담상한 모달 ============ -->
+<div class="mask" id="jcapMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="jcTitle2">
+    <div class="mhd"><h3 id="jcTitle2">세부담상한</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>공시가격이 급등해도 세금이 한꺼번에 뛰지 않도록 막아 둔 장치입니다. 올해 <b>재산세와 종부세를 합한 금액</b>이 직전 연도의 <b>150%</b>를 넘으면 초과분을 종부세에서 깎아 줍니다.</p>
+      <h4>무엇을 입력하나</h4>
+      <p>작년에 실제로 낸 <b>주택분 재산세와 종합부동산세를 합한 금액</b>을 넣으십시오. 위택스와 홈택스에서 각각 확인할 수 있습니다. 모르면 비워 두셔도 되고, 그때는 상한을 적용하지 않고 계산합니다.</p>
+      <div class="callout"><p><b>공시가격이 크게 오른 해에 의미가 있습니다.</b> 공시가격이 그대로이거나 떨어졌다면 상한에 걸릴 일이 없어 입력해도 결과가 바뀌지 않습니다.</p></div>
+      <p>이 계산기는 올해 재산세를 공시가격 × 60%에 재산세 세율표를 적용해 추정합니다. 실제 고지서의 재산세에는 도시지역분과 지방교육세가 함께 붙지만, 세부담상한 계산에는 <b>재산세 본세만</b> 들어갑니다.</p>
     </div>
   </div>
 </div>
@@ -2564,7 +2632,11 @@ function clampYear(el){
     onInput();
   });
 });
-['adjBuy','adjSale','usedBasic','unreg','farm'].forEach(function(id){ $(id).addEventListener('change', onInput); });
+['adjBuy','adjSale','usedBasic','unreg','farm','tempTwo','sangsaeng'].forEach(function(id){
+  $(id).addEventListener('change', function(){ syncVisibility(); onInput(); });
+});
+$('tempHelp').addEventListener('click', function(e){ e.preventDefault(); openModal($('tempMask')); });
+$('sangHelp').addEventListener('click', function(e){ e.preventDefault(); openModal($('sangMask')); });
 $('asset').addEventListener('change', function(){ syncVisibility(); onInput(); });
 
 $('liveAll').addEventListener('change', function(){
@@ -2590,6 +2662,7 @@ function syncVisibility(){
   $('houseCard').style.display = isHouse ? '' : 'none';
   $('adjBuyWrap').style.display  = (isHouse && houseCount === 1) ? '' : 'none';
   $('adjSaleWrap').style.display = (isHouse && houseCount >= 2) ? '' : 'none';
+  $('sangWrap').style.display = (isHouse && (houseCount === 1 || $('tempTwo').checked)) ? '' : 'none';
   $('liveWrap').style.display    = (isHouse && houseCount === 1) ? '' : 'none';
   $('liveNote').style.display    = (isHouse && houseCount >= 2) ? '' : 'none';
 }
@@ -2636,9 +2709,9 @@ $('calcBtn').addEventListener('click', function(){
 });
 
 $('resetBtn').addEventListener('click', function(){
-  Array.prototype.forEach.call(document.querySelectorAll('input'), function(i){
+  Array.prototype.forEach.call(document.querySelectorAll('#scr-yangdo input'), function(i){
     if(i.type === 'checkbox') i.checked = false; else i.value = '';
-    i.disabled = false;
+    i.disabled = false; i.readOnly = false;
   });
   $('asset').value = 'house';
   houseCount = 1;
@@ -3360,6 +3433,7 @@ var J_EMPTY = '<b>공시가격을 입력하세요</b>보유 주택 정보를 채
 
 function jHints(){
   $('jPriceK').textContent = korean(num($('jPrice')));
+  $('jPrevK').textContent = korean(num($('jPrev')));
   var sole = jCount === 1;
   $('jSoleWrap').style.display = sole ? '' : 'none';
   $('jCreditCard').style.display = (sole && $('jSole').checked) ? '' : 'none';
@@ -3380,17 +3454,27 @@ function jRun(){
   var pr = byBracket(taxBase, table);
   var calc = taxBase > 0 ? pr.tax : 0;
 
-  /* 재산세 중복분 공제 */
-  var propBase = price * 0.6;
-  var propTax = byBracket(propBase, PROP_BR).tax;
-  var overlapBase = taxBase * 0.6;
-  var propCredit = propBase > 0 ? Math.min(propTax * (overlapBase / propBase), calc) : 0;
+  /* 재산세 중복분 공제 — 종부세 과세표준에 재산세 공정시장가액비율을 곱한 뒤 재산세율을 적용한다 */
+  var propBase = price * 0.6;                        // 주택분 재산세 과세표준
+  var propTax = byBracket(propBase, PROP_BR).tax;    // 실제 부과되는 재산세
+  var overlapBase = taxBase * 0.6;                   // 종부세와 겹치는 과세표준
+  var propCredit = Math.min(byBracket(overlapBase, PROP_BR).tax, calc);
   var afterProp = Math.max(0, calc - propCredit);
 
   /* 연령 · 보유 세액공제 */
   var creditRate = single ? Math.min(0.80, (jAge + jHold) / 100) : 0;
   var credit = afterProp * creditRate;
-  var jongbu = Math.max(0, afterProp - credit);
+  var beforeCap = Math.max(0, afterProp - credit);
+
+  /* 세부담상한 — 직전 연도의 150% */
+  var prev = num($('jPrev'));
+  var capCut = 0, capLimit = 0;
+  if(prev > 0){
+    capLimit = prev * 1.5;
+    var thisYear = propTax + beforeCap;
+    if(thisYear > capLimit) capCut = Math.min(thisYear - capLimit, beforeCap);
+  }
+  var jongbu = Math.max(0, beforeCap - capCut);
   var farm = Math.floor(jongbu * 0.20);
   var total = jongbu + farm;
 
@@ -3408,6 +3492,7 @@ function jRun(){
   if(single) rows.push(['⑥','−','연령 · 보유 세액공제',
     creditRate ? ('연령 ' + jAge + '% + 보유 ' + jHold + '% = ' + Math.round(creditRate*100) + '%') : '해당 없음',
     won(credit), credit?'':'muted', 'jcredit']);
+  if(capCut) rows.push(['','−','세부담상한 초과액','직전 연도 ' + comma(prev) + '원의 150% 초과분', won(capCut), '', 'jcap']);
   rows.push(['','','납부할 종합부동산세','', won(jongbu), 'sum']);
   rows.push(['⑦','+','농어촌특별세','종부세액의 20%', won(farm)]);
   rows.push(['','','총 납부세액','', won(total), 'final']);
@@ -3420,8 +3505,17 @@ function jRun(){
   notes.push('<b>과세기준일</b> 매년 6월 1일 기준으로 판정하고, 납부기한은 12월 1일부터 15일까지입니다.');
   notes.push('연령 · 보유 세액공제는 <b>1세대 1주택 단독명의</b>에만 적용되며 합쳐서 최대 80%입니다.');
   if(jCount === 1 && !$('jSole').checked) notes.push('부부공동명의는 각자 9억원씩 공제받는 방식과 <b>1세대 1주택 특례</b>를 신청해 12억원 공제와 세액공제를 받는 방식 중 유리한 쪽을 고를 수 있습니다.');
-  notes.push('재산세 중복분은 재산세 산출세액을 과세표준 비율로 안분한 근사치입니다. 실제 고지서와 차이가 날 수 있습니다.');
-  notes.push('단순 참고용 계산입니다. 세부담상한(직전 연도의 150%), 합산배제 임대주택, 법인 보유분은 반영하지 않았습니다.');
+  notes.push('재산세 중복분은 <b>종부세 과세표준 × 재산세 공정시장가액비율 60% × 재산세율</b>로 계산했습니다. 실제 고지서와 미세한 차이가 날 수 있습니다.');
+  if(prev > 0){
+    notes.push('<b>세부담상한</b> 올해 재산세와 종부세를 합한 금액이 직전 연도의 150%를 넘으면 초과분을 종부세에서 깎아 줍니다. 이 계산에서는 올해 재산세를 ' + comma(Math.round(propTax)) + '원으로 산정했습니다.');
+    if(prev < propTax * 0.7){
+      notes.push('<b>입력값을 확인하십시오.</b> 넣으신 금액이 올해 추정 재산세보다 크게 적습니다. 재산세만 넣었거나 종부세만 넣은 것은 아닌지 살펴보세요. 둘을 <b>합한</b> 금액이어야 합니다.');
+      badges.push(['warn','직전 연도 세액 확인 필요']);
+    }
+  }
+  else notes.push('직전 연도 세액을 입력하면 <b>세부담상한</b>(직전 연도의 150%)까지 반영해 계산합니다.');
+  notes.push('종부세는 <b>사람별로</b> 과세합니다. 공동명의라면 본인 지분에 해당하는 공시가격만 입력하십시오.');
+  notes.push('단순 참고용 계산입니다. 합산배제 임대주택 · 사원용주택, 법인 보유분, 주택 외 토지분은 반영하지 않았습니다.');
 
   renderLedger(J_IDS, { rows:rows, badges:badges, notes:notes,
     krw: korean(total) || '0원', title:'종합부동산세 계산 결과', slug:'jongbu-tax' });
@@ -3659,7 +3753,7 @@ $('jSole').addEventListener('change', jInput);
 });
 $('jCalc').addEventListener('click', function(){ jRun(); if(window.innerWidth < 940) document.querySelector('#scr-jongbu .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
 $('jReset').addEventListener('click', function(){
-  $('jPrice').value=''; $('jSole').checked=true; jCount=1; jAge=0; jHold=0;
+  $('jPrice').value=''; $('jPrev').value=''; $('jSole').checked=true; jCount=1; jAge=0; jHold=0;
   [['jCntSeg','1'],['jAgeSeg','0'],['jHoldSeg','0']].forEach(function(c){
     Array.prototype.forEach.call($(c[0]).querySelectorAll('button'), function(x){
       x.setAttribute('aria-pressed', x.getAttribute('data-v')===c[1] ? 'true':'false'); });
@@ -3667,6 +3761,12 @@ $('jReset').addEventListener('click', function(){
   jHints(); clearLedger(J_IDS, J_EMPTY);
 });
 $('jRateHelp').addEventListener('click', function(){ openModal($('jrateMask')); });
+$('jCapHelp').addEventListener('click', function(){ openModal($('jcapMask')); });
+$('jPrev').addEventListener('input', function(){
+  var raw = digits($('jPrev').value); if(raw.length>13) raw = raw.slice(0,13);
+  $('jPrev').value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+  jInput();
+});
 $('jCreditHelp').addEventListener('click', function(){ openModal($('jcreditMask')); });
 
 ['lAmt'].forEach(function(id){
@@ -4126,16 +4226,29 @@ function run(){
   var unreg   = $('unreg').checked;
   var adjBuy  = $('adjBuy').checked;
   var adjSale = $('adjSale').checked;
+  var tempTwo = $('tempTwo').checked && houseCount >= 2;
+  var sang    = $('sangsaeng').checked;
+  var effCount = tempTwo ? 1 : houseCount;        // 일시적 2주택은 1주택으로 본다
   var badges = [], notes = [];
+
+  /* 조정대상지역 거주요건은 2017.8.3 이후 취득분부터 적용된다 */
+  var LIVE_RULE_FROM = new Date(2017, 7, 3);
+  var needLive = adjBuy && acq >= LIVE_RULE_FROM && !sang;
+
+  /* 다주택 중과는 2022.5.10 ~ 2026.5.9 양도분에 대해 한시 배제되었다 */
+  var SUSPEND_FROM = new Date(2022, 4, 10), SUSPEND_TO = new Date(2026, 4, 9);
+  var suspended = sal >= SUSPEND_FROM && sal <= SUSPEND_TO;
 
   /* 1 ~ 3 양도차익 */
   var gain = sp - ap - ex;
 
   /* 1세대 1주택 비과세 판정 */
   var oneHouseOK = false;
-  if(isHouse && houseCount === 1 && !unreg){
-    oneHouseOK = holdY >= 2 && (!adjBuy || liveY >= 2);
+  if(isHouse && effCount === 1 && !unreg){
+    oneHouseOK = holdY >= 2 && (!needLive || liveY >= 2);
   }
+  if(tempTwo) badges.push(['','일시적 2주택 · 1주택으로 판정']);
+  if(sang && adjBuy) badges.push(['','상생임대주택 · 거주요건 면제']);
   var taxableGain = gain, apportioned = false;
   if(oneHouseOK && gain > 0){
     if(sp <= HIGH){
@@ -4147,21 +4260,24 @@ function run(){
     apportioned = true;
     badges.push(['','1세대 1주택 · 12억 초과분 과세']);
   }
-  if(isHouse && houseCount === 1 && !oneHouseOK && !unreg){
+  if(isHouse && effCount === 1 && !oneHouseOK && !unreg){
     if(holdY < 2) notes.push('보유기간이 2년에 미달해 1세대 1주택 비과세를 적용하지 않았습니다.');
-    else if(adjBuy && liveY < 2) notes.push('취득 당시 조정대상지역이므로 2년 거주요건을 채워야 비과세가 적용됩니다.');
+    else if(needLive && liveY < 2) notes.push('2017년 8월 3일 이후 조정대상지역에서 취득했으므로 <b>2년 거주요건</b>을 채워야 비과세가 적용됩니다.');
+  }
+  if(isHouse && effCount === 1 && adjBuy && acq < LIVE_RULE_FROM){
+    notes.push('2017년 8월 3일 <b>이전</b>에 취득한 주택은 조정대상지역이어도 거주요건이 없습니다. 보유 2년만으로 비과세가 적용됩니다.');
   }
 
   /* 중과 판정 */
-  var heavy = isHouse && houseCount >= 2 && adjSale && !unreg && holdY >= 2;
-  var surcharge = 0;
-  if(heavy){
-    surcharge = houseCount === 2 ? 0.20 : 0.30;
-    badges.push(['warn', (houseCount===2?'2주택':'3주택 이상')+' 중과 +'+(surcharge*100)+'%p']);
-  } else if(isHouse && houseCount >= 2 && adjSale && holdY < 2 && !unreg){
-    surcharge = houseCount === 2 ? 0.20 : 0.30;
+  var heavyTarget = isHouse && effCount >= 2 && adjSale && !unreg;
+  var heavy = false, surcharge = 0;
+  if(heavyTarget && suspended){
+    notes.push('<b>중과 한시 배제 기간</b>의 양도입니다. 2022년 5월 10일부터 2026년 5월 9일까지 양도한 조정대상지역 다주택은 중과세율을 적용하지 않고 장기보유특별공제도 받습니다.');
+    badges.push(['','중과 한시 배제 적용']);
+  } else if(heavyTarget){
     heavy = true;
-    badges.push(['warn','중과 · 단기세율 비교과세']);
+    surcharge = effCount === 2 ? 0.20 : 0.30;
+    badges.push(['warn', (effCount===2?'2주택':'3주택 이상')+' 중과 +'+(surcharge*100)+'%p']);
   }
   if(asset === 'nonbiz'){ surcharge = 0.10; badges.push(['warn','비사업용토지 +10%p']); }
 
@@ -4174,7 +4290,7 @@ function run(){
 
   if(ltBlocked){
     badges.push(['grey','장기보유특별공제 배제 · '+ltBlocked]);
-  } else if(oneHouseOK && liveY >= 2){
+  } else if(oneHouseOK && (liveY >= 2 || sang)){
     var hh = ltcgHold1H(holdY), ll = ltcgLive1H(liveY);
     ltRate = Math.min(0.80, hh + ll);
     ltLabel = '1세대 1주택 · 보유 '+holdY+'년 '+Math.round(hh*100)+'% + 거주 '+liveY+'년 '+Math.round(ll*100)+'%';
@@ -4210,7 +4326,7 @@ function run(){
         var s2 = isHouse ? 0.60 : 0.40;
         cands.push({tax: base*s2, label:'2년 미만 단기 '+(s2*100)+'%'});
       }
-      if(holdY >= 2 || heavy){
+      if(holdY >= 2 || heavy || asset === 'nonbiz'){
         var pgr = progressive(base, surcharge);
         cands.push({
           tax: pgr.tax,
@@ -4273,7 +4389,9 @@ function run(){
   notes.unshift('<b>예정신고 기한</b> '+fmt(due)+' — 양도일이 속한 달의 말일부터 2개월. 확정신고는 '+(sal.getFullYear()+1)+'년 5월 31일까지.');
   if(rd > 0) notes.push('감면은 신고기한 내 <b>세액감면신청서</b>를 제출해야 적용됩니다. 감면종합한도는 1과세기간 1억원, 5개 과세기간 합계 2억원입니다.');
   if(gain <= 0) notes.push('양도차손이 발생했습니다. 같은 해 같은 자산군의 양도차익과 통산할 수 있습니다.');
-  notes.push('단순 참고용 계산입니다. 조합원입주권, 상생임대주택, 일시적 2주택, 등록임대주택 특례 등은 반영하지 않았습니다. 실제 신고 전 세무대리인 검토를 받으십시오.');
+  if(isHouse && houseCount >= 2) notes.push('주택 수를 셀 때 <b>조합원입주권과 분양권도 포함</b>됩니다(2021년 1월 1일 이후 취득분). 수도권·광역시·세종시 외 지역의 기준시가 3억원 이하 주택은 중과 대상 주택 수에서 제외됩니다.');
+  if(ap === 0 && gain > 0) notes.push('취득가액을 모르는 경우 매매사례가액 → 감정가액 → <b>환산취득가액</b> 순으로 적용하며, 이때 필요경비는 실액 대신 개산공제(기준시가의 3%)만 인정됩니다. 이 계산기는 환산취득가액을 자동 산정하지 않습니다.');
+  notes.push('단순 참고용 계산입니다. 등록임대주택 감면, 조합원입주권 특례, 상속·동거봉양·혼인 합가 특례, 국외자산 양도는 반영하지 않았습니다. 실제 신고 전 세무대리인 검토를 받으십시오.');
   RPT.notes = notes.slice();
   $('foot').style.display = '';
   $('foot').innerHTML = notes.map(function(n){ return '· '+n; }).join('<br>');
