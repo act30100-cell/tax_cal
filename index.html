@@ -2953,6 +2953,13 @@ function pHints(){
 function pInput(){ pHints(); if(RPT.rows.length && current === 'salary') $('pStale').style.display = ''; }
 
 /* 근로소득공제 */
+function earnedDedLabel(g){
+  if(g <= 5000000) return '총급여의 70%';
+  if(g <= 15000000) return '350만원 + 500만 초과분의 40%';
+  if(g <= 45000000) return '750만원 + 1,500만 초과분의 15%';
+  if(g <= 100000000) return '1,200만원 + 4,500만 초과분의 5%';
+  return '1,475만원 + 1억 초과분의 2% · 한도 2,000만원';
+}
 function earnedDeduction(gross){
   var d;
   if(gross <= 5000000) d = gross * 0.7;
@@ -2997,13 +3004,16 @@ function pRun(){
 
   /* 소득세 — 연간 기준으로 계산해 12로 나눈다 */
   var gross = taxable * 12;
-  var earnedInc = Math.max(0, gross - earnedDeduction(gross));
+  var earnedDed = earnedDeduction(gross);
+  var earnedInc = Math.max(0, gross - earnedDed);
   var personal = pFam * 1500000;
   var insDeduct = (np + hi + ltc + ei) * 12;
   var base = Math.max(0, earnedInc - personal - insDeduct);
   var pr = progressive(base, 0);
   var calcTax = base > 0 ? pr.tax : 0;
-  var credit = earnedCredit(calcTax, gross) + childCredit(pKid);
+  var wCredit = earnedCredit(calcTax, gross);
+  var kCredit = childCredit(pKid);
+  var credit = wCredit + kCredit;
   var yearTax = Math.max(0, calcTax - credit);
   var incomeTax = Math.floor(yearTax / 12 / 10) * 10;
   var localTax = Math.floor(incomeTax * 0.1 / 10) * 10;
@@ -3025,6 +3035,21 @@ function pRun(){
   rows.push(['','','공제 합계','', won(totalDeduct), 'sum']);
   rows.push(['','','월 실수령액','', won(net), 'final']);
   rows.push(['','','연 환산','실수령액 × 12', won(net * 12)]);
+
+  /* 소득세가 어떻게 나왔는지 연간 기준으로 펼쳐 보인다 */
+  rows.push(['','','소득세 산출 근거','연간으로 계산해 12로 나눕니다', '', 'grp']);
+  rows.push(['','','연간 총급여','과세대상 급여 × 12', won(gross)]);
+  rows.push(['','−','근로소득공제', earnedDedLabel(gross), won(earnedDed), '', 'salarytax']);
+  rows.push(['','','근로소득금액','', won(earnedInc), 'sum']);
+  rows.push(['','−','인적공제', pFam + '명 × 150만원', won(personal)]);
+  rows.push(['','−','4대보험료 공제','연간 납부액 전액', won(insDeduct)]);
+  rows.push(['','','과세표준','', won(base), 'sum']);
+  rows.push(['','×','세율', base > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음', '', 'muted', 'rate']);
+  rows.push(['','','산출세액','', won(calcTax), 'sum']);
+  rows.push(['','−','근로소득세액공제', calcTax > 0 ? '130만원까지 55% · 초과분 30%' : '해당 없음', won(wCredit)]);
+  if(kCredit) rows.push(['','−','자녀세액공제', pKid + '명', won(kCredit)]);
+  rows.push(['','','연간 결정세액','', won(yearTax), 'sum']);
+  rows.push(['','÷','12개월','위의 월 소득세', won(incomeTax), 'sum']);
 
   badges.push(['', '공제율 ' + (Math.round(totalDeduct / pay * 1000) / 10) + '%']);
   badges.push(['grey', '연봉 ' + korean(pay * 12)]);
