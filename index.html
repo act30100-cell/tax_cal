@@ -1297,7 +1297,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <div class="hd"><span class="idx">A</span><h2>보유 주택</h2><span class="note">6월 1일 기준</span></div>
     <div class="bd">
       <div class="field">
-        <label class="lb" for="jPrice">공시가격 합계 <span class="req">*</span></label>
+        <label class="lb" for="jPrice">공시가격 합계 <button class="help" id="jPriceHelp" type="button" aria-label="공시가격 설명">?</button><span class="req">*</span></label>
         <div class="unit"><input type="text" id="jPrice" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="jPriceK"></div>
         <div class="quick" data-target="jPrice">
@@ -1342,7 +1342,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         </div>
       </div>
       <div class="field" style="margin-bottom:0">
-        <label class="lb">보유기간</label>
+        <label class="lb">보유기간 <button class="help" id="jHoldHelp" type="button" aria-label="보유기간 계산 방법">?</button></label>
         <div class="seg" id="jHoldSeg">
           <button type="button" data-v="0" aria-pressed="true">5년 미만<small>공제 없음</small></button>
           <button type="button" data-v="20" aria-pressed="false">5 ~ 9년<small>20%</small></button>
@@ -1795,6 +1795,94 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>비과세를 받기 위한 2년 거주요건과, 장기보유특별공제 1세대 1주택 표를 적용받기 위한 2년 거주요건이 모두 면제됩니다.</p>
       <div class="callout"><p><b>공제율까지 채워주지는 않습니다.</b> 표를 쓸 자격만 생기고, 거주기간에 따른 공제율은 <b>실제로 산 기간</b>으로 계산합니다. 한 번도 살지 않았다면 거주분 공제는 0%이고 보유분만 받습니다.</p></div>
       <p>직전 임대차계약은 그 주택을 취득한 뒤 체결한 것이어야 합니다. 매수하면서 승계받은 임대차계약은 직전 계약으로 인정되지 않습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 공시가격 모달 ============ -->
+<div class="mask" id="jpriceMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="jpTitle">
+    <div class="mhd"><h3 id="jpTitle">공시가격이란</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>정부가 매년 정해 발표하는 <b>부동산의 공식 가격</b>입니다. 실제 거래되는 시세가 아니라 세금을 매기기 위한 기준값이고, 대체로 <b>시세보다 낮게</b> 정해집니다.</p>
+      <p>재산세, 종합부동산세, 건강보험료, 기초연금 판정에 모두 이 가격이 쓰입니다.</p>
+
+      <h4>어디서 확인하나</h4>
+      <ul>
+        <li><b>부동산공시가격 알리미</b> (realtyprice.kr) — 국토교통부 운영. 아파트는 주소만 넣으면 바로 나옵니다.</li>
+        <li><b>재산세 고지서</b> — 7월과 9월에 오는 고지서에 적혀 있습니다.</li>
+        <li><b>홈택스</b> — 종합부동산세 대상자는 11월에 고지 내용에서 확인됩니다.</li>
+      </ul>
+      <p>아파트 · 연립 · 다세대는 <b>공동주택가격</b>, 단독주택은 <b>개별주택가격</b>이라고 부릅니다. 매년 4월 말에 새 가격이 공시되고, 그해 6월 1일 기준으로 세금이 매겨집니다.</p>
+
+      <h4>무엇을 더해서 넣나</h4>
+      <p>본인 명의로 된 <b>모든 주택</b>의 공시가격을 더해서 넣으십시오. 지역과 무관하게 전국의 주택을 합칩니다.</p>
+      <div class="callout"><p><b>공동명의는 지분만 넣으십시오.</b> 종합부동산세는 사람별로 매깁니다. 부부가 절반씩 가진 공시가격 20억 아파트라면 각자 <b>10억</b>을 넣고 따로 계산해야 합니다. 20억을 넣으면 세금이 실제보다 훨씬 많게 나옵니다.</p></div>
+
+      <h4>처음이시라면</h4>
+      <p>종합부동산세는 <b>가진 집이 일정 금액을 넘을 때만</b> 내는 세금입니다. 1세대 1주택 단독명의는 공시가격 12억원, 그 밖에는 사람당 9억원까지는 한 푼도 나오지 않습니다. 대상이 되는 사람은 전체 주택 소유자의 몇 퍼센트에 불과합니다.</p>
+      <p>매년 <b>6월 1일 기준</b> 소유자에게 매기고, <b>12월 1일부터 15일까지</b> 냅니다. 6월 1일 하루 차이로 그해 세금을 내느냐 마느냐가 갈리므로, 5월 말에 파는 것과 6월 초에 파는 것은 큰 차이가 있습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 보유기간 계산 모달 ============ -->
+<div class="mask" id="jholdMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="jhTitle">
+    <div class="mhd"><h3 id="jhTitle">보유기간 세는 법</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>햇수가 아니라 <b>날짜로 꽉 채운 기간</b>입니다. 취득한 날부터 <b>과세기준일인 6월 1일</b>까지 실제로 몇 년이 지났는지로 셉니다.</p>
+
+      <h4>예를 들면</h4>
+      <table class="mtable">
+        <tr><th>취득일</th><th>2026년 6월 1일 기준</th><th>인정 기간</th></tr>
+        <tr><td>2021년 5월 1일</td><td>5년 1개월</td><td>5년 → 20% 공제</td></tr>
+        <tr><td>2021년 6월 1일</td><td>5년 0개월</td><td>5년 → 20% 공제</td></tr>
+        <tr><td>2021년 7월 1일</td><td>4년 11개월</td><td>4년 → <b>공제 없음</b></td></tr>
+      </table>
+      <p>한 달 차이로 공제가 통째로 사라집니다. 2021년과 2026년, 햇수로 세면 둘 다 6년째지만 세법은 그렇게 보지 않습니다.</p>
+
+      <div class="callout"><p><b>1년 미만은 버립니다.</b> 9년 11개월은 9년이지 10년이 아닙니다. 40% 공제를 받으려면 만 10년을 채워야 합니다. 매도 시점을 6월 1일 전후로 조정하면 한 해분 공제를 더 받을 수 있는 경우가 있습니다.</p></div>
+
+      <h4>기산일이 달라지는 경우</h4>
+      <ul>
+        <li><b>배우자에게 상속</b>받은 주택은 돌아가신 분의 보유기간을 이어서 셉니다.</li>
+        <li><b>재건축 · 재개발</b>로 새로 지은 주택은 헐린 옛 주택의 보유기간을 이어서 셉니다.</li>
+        <li><b>배우자에게 증여</b>받은 경우는 이어지지 않습니다. 증여받은 날부터 새로 셉니다.</li>
+      </ul>
+
+      <h4>연령도 같은 방식입니다</h4>
+      <p>연령 공제도 <b>6월 1일 현재 만 나이</b>로 판정합니다. 6월 2일에 60세가 되면 그해에는 공제를 받지 못하고 이듬해부터 받습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 공정시장가액비율 모달 ============ -->
+<div class="mask" id="fairMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fmTitle">
+    <div class="mhd"><h3 id="fmTitle">공정시장가액비율</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>공시가격에서 기본공제를 뺀 금액에 <b>다시 한 번 곱하는 비율</b>입니다. 세금을 매기는 바탕을 공시가격보다 낮춰 주는 완충 장치입니다.</p>
+      <p>계산 순서는 이렇습니다.</p>
+      <p>공시가격 합계 → (−) 기본공제 → <b>(×) 공정시장가액비율 60%</b> → 과세표준 → (×) 세율</p>
+
+      <h4>왜 있나</h4>
+      <p>공시가격은 정부가 매년 다시 정합니다. 부동산 값이 오르면 공시가격이 따라 오르고 세금도 함께 뜁니다. 이 비율을 낮추면 법을 바꾸지 않고도 세 부담을 조절할 수 있어, 정부가 시행령으로 조정하는 장치로 씁니다.</p>
+
+      <h4>얼마였나</h4>
+      <table class="mtable">
+        <tr><th>연도</th><th>주택분 비율</th></tr>
+        <tr><td>2019년</td><td>85%</td></tr>
+        <tr><td>2020년</td><td>90%</td></tr>
+        <tr><td>2021년</td><td>95%</td></tr>
+        <tr><td>2022년</td><td>60%</td></tr>
+        <tr><td>2023년 ~ 현재</td><td>60%</td></tr>
+      </table>
+      <p>2021년 95%에서 2022년 60%로 한꺼번에 내려갔습니다. 공시가격이 그대로여도 세금이 크게 줄어든 해였습니다.</p>
+
+      <div class="callout"><p><b>공시가격 20억 1주택이라면.</b> 기본공제 12억을 빼면 8억이 남고, 여기에 60%를 곱한 <b>4억 8천만원</b>이 과세표준입니다. 만약 비율이 95%였다면 과세표준이 7억 6천만원이 되어 세율 구간까지 올라갑니다.</p></div>
+
+      <p style="color:var(--ink-3);font-size:12.5px">재산세에도 별도의 공정시장가액비율이 있습니다. 주택분 재산세는 60%이며, 이 계산기의 재산세 중복분 공제 계산에 쓰입니다.</p>
     </div>
   </div>
 </div>
@@ -3482,7 +3570,7 @@ function jRun(){
   rows.push(['①','','공시가격 합계','6월 1일 기준', won(price)]);
   rows.push(['②','−','기본공제', single ? '1세대 1주택 12억원' : '9억원', won(Math.min(basic, price))]);
   rows.push(['','','과세기준 초과금액','', won(over), 'sum']);
-  rows.push(['③','×','공정시장가액비율','주택 60%', '', 'muted']);
+  rows.push(['③','×','공정시장가액비율','주택 60%', '', 'muted', 'fair']);
   rows.push(['','','과세표준','', won(taxBase), 'sum']);
   rows.push(['④','×','세율',
     taxBase > 0 ? ((jCount>=3?'3주택 이상 · ':'2주택 이하 · ') + (Math.round(pr.rate*10000)/100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음',
@@ -3762,6 +3850,8 @@ $('jReset').addEventListener('click', function(){
 });
 $('jRateHelp').addEventListener('click', function(){ openModal($('jrateMask')); });
 $('jCapHelp').addEventListener('click', function(){ openModal($('jcapMask')); });
+$('jPriceHelp').addEventListener('click', function(){ openModal($('jpriceMask')); });
+$('jHoldHelp').addEventListener('click', function(){ openModal($('jholdMask')); });
 $('jPrev').addEventListener('input', function(){
   var raw = digits($('jPrev').value); if(raw.length>13) raw = raw.slice(0,13);
   $('jPrev').value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
