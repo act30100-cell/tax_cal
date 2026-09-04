@@ -1666,6 +1666,36 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   </div>
 </div>
 
+<!-- ============ 소득세 기본세율 모달 ============ -->
+<div class="mask" id="basicrateMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="brTitle">
+    <div class="mhd"><h3 id="brTitle">소득세 기본세율</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>근로소득에 적용하는 세율입니다. 과세표준 구간마다 세율이 올라가는 누진 구조이고, 계산식은 <b>과세표준 × 세율 − 누진공제</b>입니다.</p>
+      <table class="mtable">
+        <tr><th>과세표준</th><th>세율</th><th>누진공제</th></tr>
+        <tr><td>1,400만원 이하</td><td>6%</td><td>—</td></tr>
+        <tr><td>5,000만원 이하</td><td>15%</td><td>126만원</td></tr>
+        <tr><td>8,800만원 이하</td><td>24%</td><td>576만원</td></tr>
+        <tr><td>1억 5,000만원 이하</td><td>35%</td><td>1,544만원</td></tr>
+        <tr><td>3억원 이하</td><td>38%</td><td>1,994만원</td></tr>
+        <tr><td>5억원 이하</td><td>40%</td><td>2,594만원</td></tr>
+        <tr><td>10억원 이하</td><td>42%</td><td>3,594만원</td></tr>
+        <tr><td>10억원 초과</td><td>45%</td><td>6,594만원</td></tr>
+      </table>
+
+      <h4>구간이 넘어가도 세금이 급등하지 않습니다</h4>
+      <p>흔한 오해가 있습니다. 과세표준이 5,000만원을 1원 넘으면 전체에 24%가 붙는다고 생각하는 경우인데, 그렇지 않습니다. <b>넘어간 부분에만</b> 높은 세율이 붙습니다. 누진공제액이 그 조정을 대신합니다.</p>
+      <div class="callout"><p><b>과세표준 5,000만원이면</b> 5,000만 × 15% − 126만 = <b>624만원</b>입니다.<br>
+      <b>5,100만원이면</b> 5,100만 × 24% − 576만 = <b>648만원</b>으로, 100만원이 늘어난 만큼 24만원만 더 냅니다.</p></div>
+
+      <h4>여기에 지방소득세 10%가 붙습니다</h4>
+      <p>소득세로 결정된 금액의 10%가 지방소득세로 따로 부과됩니다. 실제 부담은 표의 세율보다 1.1배 무겁다고 보시면 됩니다.</p>
+      <p style="color:var(--ink-3);font-size:12.5px">같은 기본세율표를 양도소득세에도 씁니다. 다만 양도소득세는 보유기간이 짧거나 다주택 중과에 해당하면 이 표 대신 단기세율이나 가산세율이 적용됩니다.</p>
+    </div>
+  </div>
+</div>
+
 <!-- ============ 4대보험 요율 모달 ============ -->
 <div class="mask" id="insrateMask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="irTitle">
@@ -3044,7 +3074,7 @@ function pRun(){
   rows.push(['','−','인적공제', pFam + '명 × 150만원', won(personal)]);
   rows.push(['','−','4대보험료 공제','연간 납부액 전액', won(insDeduct)]);
   rows.push(['','','과세표준','', won(base), 'sum']);
-  rows.push(['','×','세율', base > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음', '', 'muted', 'rate']);
+  rows.push(['','×','세율', base > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음', '', 'muted', 'basicrate']);
   rows.push(['','','산출세액','', won(calcTax), 'sum']);
   rows.push(['','−','근로소득세액공제', calcTax > 0 ? '130만원까지 55% · 초과분 30%' : '해당 없음', won(wCredit)]);
   if(kCredit) rows.push(['','−','자녀세액공제', pKid + '명', won(kCredit)]);
