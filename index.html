@@ -791,20 +791,35 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 
       <div class="field" id="liveWrap">
         <label class="lb">거주기간 <button class="help" id="liveHelp" type="button" aria-label="거주기간 입력 방법 설명">?</button><span style="font-weight:400;color:var(--ink-3)">지금 파는 그 집에 산 기간</span></label>
-        <label class="chk" style="padding-top:0">
-          <input type="checkbox" id="liveAll">
-          <span>이 주택을 취득한 날부터 양도일까지 계속 거주<em>체크하면 아래 날짜를 자동으로 채웁니다</em></span></label>
-        <div class="row2" style="margin-top:8px">
-          <div>
-            <label class="lb" for="rin" style="font-size:11.5px">전입일 · 실제 거주 시작</label>
-            <input type="date" id="rin" min="1900-01-01" max="2099-12-31">
-          </div>
-          <div>
-            <label class="lb" for="rout" style="font-size:11.5px">전출일 · 거주 종료</label>
-            <input type="date" id="rout" min="1900-01-01" max="2099-12-31">
+        <div class="seg two" id="liveModeSeg">
+          <button type="button" data-v="date" aria-pressed="true">날짜로 입력<small>정확하게</small></button>
+          <button type="button" data-v="year" aria-pressed="false">햇수로 입력<small>간단하게</small></button>
+        </div>
+
+        <div id="liveDateWrap" style="margin-top:10px">
+          <label class="chk" style="padding-top:0">
+            <input type="checkbox" id="liveAll">
+            <span>이 주택을 취득한 날부터 양도일까지 계속 거주<em>체크하면 아래 날짜를 자동으로 채웁니다</em></span></label>
+          <div class="row2" style="margin-top:8px">
+            <div>
+              <label class="lb" for="rin" style="font-size:11.5px">전입일 · 실제 거주 시작</label>
+              <input type="date" id="rin" min="1900-01-01" max="2099-12-31">
+            </div>
+            <div>
+              <label class="lb" for="rout" style="font-size:11.5px">전출일 · 거주 종료</label>
+              <input type="date" id="rout" min="1900-01-01" max="2099-12-31">
+            </div>
           </div>
         </div>
+
+        <div id="liveYearWrap" style="display:none;margin-top:10px">
+          <label class="lb" for="liveYears" style="font-size:11.5px">거주한 햇수</label>
+          <div class="unit"><input type="text" id="liveYears" inputmode="numeric" placeholder="0"><span class="won">년</span></div>
+          <div class="hint" style="text-align:left;color:var(--ink-3);font-weight:400">1년 미만은 버립니다. 4년 8개월이면 <b>4</b>를 넣으세요</div>
+        </div>
+
         <div class="hint" id="liveHint"></div>
+        <button class="btn" type="button" id="liveClear" style="width:100%;margin-top:8px;padding:9px;font-size:12.5px">거주기간 지우기 — 거주하지 않은 것으로 계산</button>
       </div>
     </div>
   </section>
@@ -3024,6 +3039,7 @@ function progressive(base, surcharge){
 
 /* ---------------- 상태 ---------------- */
 var houseCount = 1;
+var liveMode = 'date';
 var childCount = 2;
 
 var SCREENS = {
@@ -3163,9 +3179,13 @@ function clampYear(el){
   var m = v.match(/^(\d+)-(\d{2})-(\d{2})$/);
   if(!m) return false;
   var y = m[1];
-  if(y.length > 4) y = y.slice(0, 4);       // 202600 → 2026
   var yn = parseInt(y, 10);
-  if(!yn || yn < 1900) yn = 1900;
+  /* 타이핑 도중에는 연도가 0002 처럼 잠깐 작은 값이 된다.
+     이때 손대면 입력을 방해하므로 네 자리를 다 넣은 뒤에만 보정한다. */
+  if(y.length <= 4 && yn < 1000) return false;
+  if(y.length > 4) y = y.slice(0, 4);       // 202600 → 2026
+  yn = parseInt(y, 10);
+  if(yn < 1900) yn = 1900;
   if(yn > 2099) yn = 2099;
   var fixed = ('0000' + yn).slice(-4) + '-' + m[2] + '-' + m[3];
   if(fixed !== v){ el.value = fixed; return true; }
@@ -3221,6 +3241,27 @@ function openModal(m){
 function closeModal(m){ m.classList.remove('on'); document.body.style.overflow=''; }
 $('exHelp').addEventListener('click', function(){ openModal($('exMask')); });
 $('liveHelp').addEventListener('click', function(){ openModal($('liveMask')); });
+Array.prototype.forEach.call($('liveModeSeg').querySelectorAll('button'), function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('liveModeSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true');
+    liveMode = b.getAttribute('data-v');
+    $('liveDateWrap').style.display = (liveMode === 'date') ? '' : 'none';
+    $('liveYearWrap').style.display = (liveMode === 'year') ? '' : 'none';
+    onInput();
+  });
+});
+$('liveYears').addEventListener('input', function(){
+  var raw = digits($('liveYears').value);
+  $('liveYears').value = raw ? String(Math.min(parseInt(raw,10), 99)) : '';
+  onInput();
+});
+$('liveClear').addEventListener('click', function(){
+  $('rin').value = ''; $('rout').value = ''; $('liveYears').value = '';
+  $('liveAll').checked = false;
+  onInput();
+  toast('거주기간을 지웠습니다', 1800);
+});
 $('rdHelp').addEventListener('click', function(){ openModal($('rdMask')); });
 $('out').addEventListener('click', function(e){
   var b = e.target;
@@ -3261,6 +3302,10 @@ $('resetBtn').addEventListener('click', function(){
   });
   $('asset').value = 'house';
   houseCount = 1;
+  liveMode = 'date';
+  Array.prototype.forEach.call($('liveModeSeg').querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', x.getAttribute('data-v')==='date' ? 'true':'false'); });
+  $('liveDateWrap').style.display = ''; $('liveYearWrap').style.display = 'none';
   Array.prototype.forEach.call($('cntSeg').querySelectorAll('button'), function(x, i){
     x.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
   });
@@ -5069,10 +5114,22 @@ function refreshHints(){
   } else {
     $('holdHint').textContent = (acq && sal) ? '양도일이 취득일보다 빠릅니다' : '';
   }
-  var rin = pd($('rin').value), rout = pd($('rout').value);
-  if(rin && rout && rout >= rin){
-    $('liveHint').textContent = '거주기간 ' + ymText(rin,rout) + ' → 만 ' + fullYears(rin,rout) + '년';
-  } else { $('liveHint').textContent = ''; }
+  if(liveMode === 'year'){
+    var ly = parseInt(digits($('liveYears').value) || '0', 10);
+    $('liveHint').textContent = ly ? ('거주기간 만 ' + ly + '년으로 계산합니다') : '거주하지 않은 것으로 계산합니다';
+  } else {
+    var rin = pd($('rin').value), rout = pd($('rout').value);
+    if(rin && rout && rout >= rin){
+      $('liveHint').textContent = '거주기간 ' + ymText(rin,rout) + ' → 만 ' + fullYears(rin,rout) + '년';
+    } else { $('liveHint').textContent = '거주하지 않은 것으로 계산합니다'; }
+  }
+}
+
+/* 거주기간을 어떤 방식으로 넣었든 만 연수로 돌려준다 */
+function liveYearsOf(){
+  if(liveMode === 'year') return parseInt(digits($('liveYears').value) || '0', 10);
+  var a = pd($('rin').value), b = pd($('rout').value);
+  return (a && b && b >= a) ? fullYears(a, b) : 0;
 }
 
 /* 결과 영역을 비우고 안내만 남긴다 */
@@ -5100,8 +5157,7 @@ function run(){
   var acq = pd($('acq').value), sal = pd($('sal').value);
   var sp = num($('sp')), ap = num($('ap')), ex = num($('ex')), rd = num($('rd'));
   var holdY = (acq && sal && sal >= acq) ? fullYears(acq, sal) : 0;
-  var rin = pd($('rin').value), rout = pd($('rout').value);
-  var liveY = (rin && rout && rout >= rin) ? fullYears(rin, rout) : 0;
+  var liveY = liveYearsOf();
 
   if(!acq || !sal || sal < acq || !sp){
     showEmpty('<b>금액과 날짜를 입력하세요</b>양도가액 · 취득가액 · 취득일 · 양도일을 채운 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.');
