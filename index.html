@@ -375,6 +375,9 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 }
 .ustep span{flex:1;min-width:0;font-size:13px;color:var(--ink);line-height:1.45}
 .ustep b{font-weight:800;color:var(--ink)}
+.ulist p{margin:0 0 5px;font-size:12.5px;line-height:1.5}
+.ulist p:last-child{margin-bottom:0}
+.ulist b{font-weight:800}
 .ustep em{
   display:block;font-style:normal;font-size:11.5px;color:var(--ink-3);
   line-height:1.45;margin-top:3px;
@@ -585,9 +588,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <button class="mitem" type="button" data-go="gift"><span class="dot"></span>증여세<small>사전증여 합산</small></button>
   <button class="mitem" type="button" data-go="inherit"><span class="dot"></span>상속세<small>상속공제 반영</small></button>
   <button class="mitem" type="button" data-go="compare"><span class="dot"></span>증여 vs 상속 비교<small>절세 시뮬레이션</small></button>
-  <div class="mcat">급여 · 보험 · 대출</div>
+  <div class="mcat">급여 · 금융</div>
   <button class="mitem" type="button" data-go="salary"><span class="dot"></span>월급 실수령액<small>소득세 · 4대보험</small></button>
   <button class="mitem" type="button" data-go="insurance"><span class="dot"></span>4대보험료<small>직장 · 지역</small></button>
+  <button class="mitem" type="button" data-go="stock"><span class="dot"></span>해외주식 양도세<small>미국주식 · 손익통산</small></button>
   <button class="mitem" type="button" data-go="loan"><span class="dot"></span>대출 상환 계산기<small>월 상환액</small></button>
   <div class="mver"><b>버전 2026.09.06</b><span id="verBack"></span></div>
 </nav>
@@ -643,7 +647,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   </div>
 
   <div class="hgroup">
-    <div class="ghead"><b>급여 · 보험 · 대출</b><span>매달 들어오고 나가는 돈</span></div>
+    <div class="ghead"><b>급여 · 금융</b><span>일하고 빌리고 투자하며 내는 돈</span></div>
     <div class="homelist">
       <button class="homecard c3" type="button" data-go="salary">
         <span class="ico">급여</span>
@@ -653,6 +657,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <button class="homecard c3" type="button" data-go="insurance">
         <span class="ico">보험</span>
         <span><b>4대보험료</b><span>직장 · 지역 · 사업주 부담까지</span></span>
+        <span class="arrow">›</span>
+      </button>
+      <button class="homecard c3" type="button" data-go="stock">
+        <span class="ico">주식</span>
+        <span><b>해외주식 양도세</b><span>손익통산 · 250만원 공제 · 22%</span></span>
         <span class="arrow">›</span>
       </button>
       <button class="homecard c3" type="button" data-go="loan">
@@ -1600,6 +1609,152 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 </div>
 </div>
 
+<!-- ============ 해외주식 양도소득세 ============ -->
+<div class="grid" id="scr-stock" style="display:none">
+<div>
+  <section class="card">
+    <div class="hd"><span class="idx">?</span><h2>사용방법</h2><button class="help" id="kHowHelp" type="button" aria-label="자세히 보기" style="margin-left:auto">?</button></div>
+    <div class="bd">
+      <div class="ustep"><i>1</i><span><b>한 해 동안 실현한 손익</b>을 넣으세요<em>1월 1일부터 12월 31일까지 결제된 매도분입니다</em></span></div>
+      <div class="ustep"><i>2</i><span>이익 종목과 손실 종목을 <b>각각 합쳐서</b> 넣으세요<em>손실은 이익에서 차감됩니다</em></span></div>
+      <div class="ustep" style="margin-bottom:15px"><i>3</i><span><b>계산하기</b>를 누르세요<em>세금을 0으로 만드는 손실 규모도 함께 알려드립니다</em></span></div>
+      <div class="info ulist">
+        <p><b>세율</b> 22% — 양도소득세 20% + 지방소득세 2%</p>
+        <p><b>공제</b> 연 250만원 — 국내주식과 합산</p>
+        <p><b>신고</b> 다음 해 5월 1일 ~ 31일</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">A</span><h2>실현 손익</h2><span class="note" id="kYearNote"></span></div>
+    <div class="bd">
+      <div class="field" style="margin-bottom:0">
+        <div class="seg two" id="kModeSeg">
+          <button type="button" data-v="krw" aria-pressed="true">원화로 입력<small>증권사 손익 그대로</small></button>
+          <button type="button" data-v="usd" aria-pressed="false">달러로 입력<small>환율까지 계산</small></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="kKrwCard">
+    <div class="hd"><span class="idx">B</span><h2>연간 손익 합계</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="lb" for="kGain">이익 실현 합계 <span class="req">*</span></label>
+        <div class="unit"><input type="text" id="kGain" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="kGainK"></div>
+        <div class="quick" data-target="kGain">
+          <button type="button" data-add="1000000">+100만</button>
+          <button type="button" data-add="5000000">+500만</button>
+          <button type="button" data-add="10000000">+1,000만</button>
+          <button type="button" data-add="50000000">+5,000만</button>
+          <button type="button" data-add="100000000">+1억</button>
+          <button type="button" class="clear" data-clear>지우기</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lb" for="kLoss">손실 실현 합계 <button class="help" id="kLossHelp" type="button" aria-label="손익통산 설명">?</button></label>
+        <div class="unit"><input type="text" id="kLoss" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="kLossK"></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="kFee">거래 수수료 합계 <span style="font-weight:400;color:var(--ink-3)">증권사 · 현지 수수료</span></label>
+        <div class="unit"><input type="text" id="kFee" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="kFeeK"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="kUsdCard" style="display:none">
+    <div class="hd"><span class="idx">B</span><h2>달러 거래 · 환율</h2><span class="note">결제일 기준환율</span></div>
+    <div class="bd">
+      <div class="field">
+        <div class="row2">
+          <div>
+            <label class="lb" for="kSellUsd">매도금액 <span class="req">*</span></label>
+            <div class="unit"><input type="text" id="kSellUsd" inputmode="decimal" placeholder="0"><span class="won">$</span></div>
+          </div>
+          <div>
+            <label class="lb" for="kSellFx">매도일 환율</label>
+            <div class="unit"><input type="text" id="kSellFx" inputmode="decimal" placeholder="1380"><span class="won">원</span></div>
+          </div>
+        </div>
+        <div class="hint" id="kSellK"></div>
+      </div>
+      <div class="field">
+        <div class="row2">
+          <div>
+            <label class="lb" for="kBuyUsd">매수금액 <span class="req">*</span></label>
+            <div class="unit"><input type="text" id="kBuyUsd" inputmode="decimal" placeholder="0"><span class="won">$</span></div>
+          </div>
+          <div>
+            <label class="lb" for="kBuyFx">매수일 환율 <button class="help" id="kFxHelp" type="button" aria-label="환율 설명">?</button></label>
+            <div class="unit"><input type="text" id="kBuyFx" inputmode="decimal" placeholder="1300"><span class="won">원</span></div>
+          </div>
+        </div>
+        <div class="hint" id="kBuyK"></div>
+      </div>
+      <div class="field">
+        <label class="lb" for="kFeeUsd">거래 수수료</label>
+        <div class="unit"><input type="text" id="kFeeUsd" inputmode="decimal" placeholder="0"><span class="won">$</span></div>
+        <div class="hint" id="kFeeUsdK"></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="kOther">같은 해 다른 종목 손익 <span style="font-weight:400;color:var(--ink-3)">손실이면 그대로 손실 칸에</span></label>
+        <div class="row2">
+          <div>
+            <label class="lb" for="kOtherGain" style="font-size:11.5px">이익 (원)</label>
+            <div class="unit"><input type="text" id="kOtherGain" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+          </div>
+          <div>
+            <label class="lb" for="kOtherLoss" style="font-size:11.5px">손실 (원)</label>
+            <div class="unit"><input type="text" id="kOtherLoss" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="hd"><span class="idx">C</span><h2>공제</h2></div>
+    <div class="bd">
+      <div class="field">
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="kUsedBasic">
+          <span>기본공제 250만원을 이미 사용<em>같은 해에 국내주식 등으로 양도소득 기본공제를 받았다면 체크하세요</em></span></label>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb" for="kForeign">외국납부세액 <button class="help" id="kForeignHelp" type="button" aria-label="설명">?</button><span style="font-weight:400;color:var(--ink-3)">선택</span></label>
+        <div class="unit"><input type="text" id="kForeign" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="kForeignK"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn" type="button" id="kReset">입력 초기화</button>
+    <button class="btn pri" type="button" id="kCalc">계산하기</button>
+  </div>
+</div>
+
+<div class="ledger-col">
+  <section class="card ledger">
+    <div class="hd"><span class="idx">계산</span><h2>세액 계산 흐름</h2><span class="note" id="kDateNote"></span></div>
+    <div class="stale" id="kStale" style="display:none">입력이 바뀌었습니다. <b>계산하기</b>를 다시 눌러 주세요.</div>
+    <div id="kBadges" class="badges" style="display:none"></div>
+    <div class="bd" id="kOut">
+      <div class="empty"><b>한 해 실현 손익을 입력하세요</b>이익과 손실을 각각 합쳐 넣은 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.</div>
+    </div>
+    <div class="foot" id="kFoot" style="display:none"></div>
+    <div class="pdfbar" id="kPdfbar" style="display:none">
+      <button class="pdfbtn" type="button" data-save="pdf">PDF로 저장</button>
+      <button class="pdfbtn alt" type="button" data-save="png">이미지로 저장</button>
+    </div>
+  </section>
+</div>
+</div>
+
 <!-- ============ 대출 계산기 ============ -->
 <div class="grid" id="scr-loan" style="display:none">
 <div>
@@ -2202,6 +2357,101 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   </div>
 </div>
 
+<!-- ============ 해외주식 사용법 모달 ============ -->
+<div class="mask" id="khowMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="khTitle">
+    <div class="mhd"><h3 id="khTitle">해외주식 양도소득세</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>미국 주식처럼 국외에 상장된 주식을 팔아 이익이 나면 양도소득세를 냅니다. 국내 상장주식과 달리 <b>금액과 무관하게</b> 과세됩니다.</p>
+      <table class="mtable">
+        <tr><th>구분</th><th>내용</th></tr>
+        <tr><td>세율</td><td>22% (양도소득세 20% + 지방소득세 2%)</td></tr>
+        <tr><td>기본공제</td><td>연 250만원</td></tr>
+        <tr><td>과세기간</td><td>1월 1일 ~ 12월 31일 결제분</td></tr>
+        <tr><td>신고 · 납부</td><td>다음 해 5월 1일 ~ 31일</td></tr>
+      </table>
+      <p>세율에 구간이 없습니다. 1,000만원을 벌든 10억원을 벌든 같은 22%입니다.</p>
+
+      <h4>결제일 기준입니다</h4>
+      <p>매도 <b>주문일</b>이 아니라 <b>결제일</b> 기준으로 과세기간을 가릅니다. 미국 주식은 매도 후 영업일 하루 뒤에 결제되므로, 12월 마지막 영업일에 판 것은 다음 해 소득이 될 수 있습니다.</p>
+
+      <h4>배당은 별개입니다</h4>
+      <p>이 계산기는 <b>매매차익</b>만 다룹니다. 배당금은 현지에서 원천징수된 뒤 국내에서 배당소득으로 잡히고, 다른 금융소득과 합쳐 연 2,000만원을 넘으면 종합과세됩니다.</p>
+
+      <div class="callout"><p><b>손실이 나도 신고하는 편이 낫습니다.</b> 낼 세금이 없어도 신고해 두면 거래 내역이 정리되고, 나중에 소명 요구를 받을 때 근거가 됩니다.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 손익통산 모달 ============ -->
+<div class="mask" id="klossMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="klTitle">
+    <div class="mhd"><h3 id="klTitle">손익통산과 절세</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>같은 해에 실현한 <b>모든 종목의 손익을 합쳐서</b> 과세합니다. 어떤 종목에서 2,000만원을 벌고 다른 종목에서 500만원을 잃었다면 1,500만원에만 세금이 붙습니다.</p>
+
+      <h4>연말 손실 실현</h4>
+      <p>12월에 손실 중인 종목을 팔면 그해 이익과 상계됩니다. 팔고 <b>바로 다시 사도</b> 됩니다. 국내에는 미국의 워시세일 같은 규제가 없습니다.</p>
+      <div class="callout"><p><b>다만 미루는 것일 뿐입니다.</b> 손실 종목을 팔았다 다시 사면 매수단가가 낮아져 나중에 팔 때 양도차익이 그만큼 커집니다. 올해 세금을 내년으로 넘기는 효과이지 없애는 것은 아닙니다.</p>
+      <p>매년 250만원 공제를 새로 받는다는 점, 세금 낼 돈을 그동안 굴릴 수 있다는 점에서는 실익이 있습니다.</p></div>
+
+      <h4>이월은 안 됩니다</h4>
+      <p>올해 손실이 이익보다 크면 그 차액은 <b>다음 해로 넘어가지 않습니다.</b> 부동산 양도차손과 다른 점입니다. 큰 손실을 실현할 때는 같은 해에 이익도 함께 실현해야 상계됩니다.</p>
+
+      <h4>250만원 나눠 쓰기</h4>
+      <p>기본공제는 매년 250만원씩 새로 생깁니다. 수익이 큰 종목을 12월과 다음 해 1월로 나눠 팔면 공제를 두 번 받아 <b>55만원</b>을 아낍니다.</p>
+      <p>국내주식 대주주 양도소득이 있다면 그쪽과 합산해 250만원을 한 번만 공제받습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 환율 모달 ============ -->
+<div class="mask" id="kfxMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kfTitle">
+    <div class="mhd"><h3 id="kfTitle">환율과 환차익</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <div class="callout"><p><b>달러로 손해를 봐도 세금이 나올 수 있습니다.</b> 세법은 원화로 환산한 금액을 기준으로 하기 때문입니다.</p></div>
+
+      <h4>어떻게 환산하나</h4>
+      <p>매수할 때와 매도할 때 각각 <b>결제일의 기준환율</b>로 원화 금액을 정합니다. 그 두 원화 금액의 차이가 양도차익입니다.</p>
+      <p>양도가액 = 매도금액(달러) × 매도 결제일 환율<br>취득가액 = 매수금액(달러) × 매수 결제일 환율</p>
+
+      <h4>예를 들면</h4>
+      <p>4만 달러에 사서 5만 달러에 팔았습니다. 달러로는 1만 달러 이익입니다.</p>
+      <table class="mtable">
+        <tr><th></th><th>달러</th><th>환율</th><th>원화</th></tr>
+        <tr><td>매도</td><td>50,000</td><td>1,380원</td><td>6,900만원</td></tr>
+        <tr><td>매수</td><td>40,000</td><td>1,300원</td><td>5,200만원</td></tr>
+        <tr><td>차익</td><td>10,000</td><td></td><td><b>1,700만원</b></td></tr>
+      </table>
+      <p>환율이 오르지 않았다면 차익은 1,300만원이었을 것입니다. 나머지 <b>400만원이 환차익</b>이고 이것도 과세 대상입니다.</p>
+      <p>반대 상황도 생깁니다. 달러로 손실을 봤는데 그사이 환율이 크게 올랐다면, 원화로는 이익이 되어 세금을 냅니다.</p>
+
+      <h4>증권사 앱 손익과 다릅니다</h4>
+      <p>증권사 화면의 수익률은 대체로 달러 기준이거나 현재 환율로 계산한 값입니다. 세법상 손익과 다를 수 있으므로, 신고할 때는 증권사가 발급하는 <b>양도소득세 신고 안내자료</b>를 기준으로 하십시오.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 외국납부세액 모달 ============ -->
+<div class="mask" id="kforeignMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kfgTitle">
+    <div class="mhd"><h3 id="kfgTitle">외국납부세액공제</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>주식을 판 나라에서 이미 양도소득세를 냈다면, 같은 소득에 두 번 과세되지 않도록 국내 세금에서 빼줍니다.</p>
+
+      <h4>미국 주식은 대개 해당 없습니다</h4>
+      <p>한미 조세조약에 따라 <b>미국은 한국 거주자의 주식 양도차익에 과세하지 않습니다.</b> 미국 주식만 거래한다면 이 칸은 비워 두십시오.</p>
+      <p>배당금에서 떼는 15%는 배당소득세이지 양도소득세가 아닙니다. 여기에 넣으면 안 되고, 배당은 종합소득세 신고에서 따로 공제받습니다.</p>
+
+      <h4>넣어야 하는 경우</h4>
+      <p>중국, 인도, 베트남 등 일부 국가는 주식 양도차익에 현지 과세를 합니다. 그 나라에 낸 세금이 있다면 납세증명서를 갖춰 넣으십시오.</p>
+
+      <div class="callout"><p><b>한도가 있습니다.</b> 국내 산출세액 중 그 나라 소득이 차지하는 비율까지만 공제됩니다. 현지 세율이 한국보다 높아도 초과분은 돌려받지 못합니다.</p></div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ 부담부증여 모달 ============ -->
 <div class="mask" id="gburdenMask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gbTitle">
@@ -2786,7 +3036,8 @@ var SCREENS = {
   chwideuk:{ el:'scr-chwideuk', title:'취득세' },
   compare: { el:'scr-compare', title:'증여 vs 상속 비교' },
   salary:  { el:'scr-salary',  title:'월급 실수령액' },
-  insurance:{ el:'scr-insurance', title:'4대보험료' }
+  insurance:{ el:'scr-insurance', title:'4대보험료' },
+  stock:   { el:'scr-stock',   title:'해외주식 양도세' }
 };
 var current = 'home';
 
@@ -3612,6 +3863,130 @@ function iRun(){
   }
 }
 
+/* ================= 해외주식 양도소득세 ================= */
+var STOCK_RATE  = 0.20;        // 양도소득세율
+var STOCK_LOCAL = 0.10;        // 지방소득세 = 양도소득세의 10% (실질 2%)
+var STOCK_DED   = 2500000;     // 양도소득 기본공제 (연 1회 · 주식 그룹)
+
+var kMode = 'krw';
+var K_IDS = { out:'kOut', stale:'kStale', badges:'kBadges', foot:'kFoot', pdfbar:'kPdfbar', dateNote:'kDateNote' };
+var K_EMPTY = '<b>한 해 실현 손익을 입력하세요</b>이익과 손실을 각각 합쳐 넣은 뒤<br>아래 <b style="display:inline">계산하기</b>를 눌러 주세요.';
+
+function fnum(id){ return parseFloat(($(id).value || '').replace(/[^\d.]/g,'')) || 0; }
+
+function kHints(){
+  $('kKrwCard').style.display = (kMode === 'krw') ? '' : 'none';
+  $('kUsdCard').style.display = (kMode === 'usd') ? '' : 'none';
+  ['kGain','kLoss','kFee','kForeign','kOtherGain','kOtherLoss'].forEach(function(id){
+    $(id+'K') && ($(id+'K').textContent = korean(num($(id))));
+  });
+  var sell = fnum('kSellUsd') * (fnum('kSellFx') || 0);
+  var buy  = fnum('kBuyUsd')  * (fnum('kBuyFx')  || 0);
+  var fee  = fnum('kFeeUsd')  * (fnum('kSellFx') || 0);
+  $('kSellK').textContent = sell ? ('원화 ' + comma(Math.round(sell)) + '원') : '';
+  $('kBuyK').textContent  = buy  ? ('원화 ' + comma(Math.round(buy))  + '원') : '';
+  $('kFeeUsdK').textContent = fee ? ('원화 ' + comma(Math.round(fee)) + '원') : '';
+  var now = new Date();
+  $('kYearNote').textContent = now.getFullYear() + '년 실현분';
+}
+function kInput(){ kHints(); if(RPT.rows.length && current === 'stock') $('kStale').style.display = ''; }
+
+function kRun(){
+  kHints();
+  var rows = [], badges = [], notes = [];
+  var gain, loss, fee, fxNote = '';
+
+  if(kMode === 'usd'){
+    var sellUsd = fnum('kSellUsd'), buyUsd = fnum('kBuyUsd'), feeUsd = fnum('kFeeUsd');
+    var sellFx = fnum('kSellFx'), buyFx = fnum('kBuyFx');
+    if(!sellUsd || !sellFx || !buyFx){
+      clearLedger(K_IDS, K_EMPTY); toast('매도금액과 환율을 입력하세요'); $('kSellUsd').focus(); return;
+    }
+    var sellKrw = Math.round(sellUsd * sellFx);
+    var buyKrw  = Math.round(buyUsd * buyFx);
+    var feeKrw  = Math.round(feeUsd * sellFx);
+    var thisGain = sellKrw - buyKrw - feeKrw;
+
+    /* 환율만으로 생긴 차익을 따로 보여준다 */
+    var usdGain = sellUsd - buyUsd - feeUsd;
+    var fxEffect = thisGain - Math.round(usdGain * buyFx);
+
+    rows.push(['','','달러 거래', sellUsd.toLocaleString() + ' 달러에 매도 · ' + buyUsd.toLocaleString() + ' 달러에 매수', '', 'grp']);
+    rows.push(['①','','양도가액', '$' + sellUsd.toLocaleString() + ' × ' + comma(sellFx) + '원', won(sellKrw)]);
+    rows.push(['②','−','취득가액', '$' + buyUsd.toLocaleString() + ' × ' + comma(buyFx) + '원', won(buyKrw)]);
+    if(feeKrw) rows.push(['③','−','필요경비', '$' + feeUsd.toLocaleString() + ' × ' + comma(sellFx) + '원', won(feeKrw)]);
+    rows.push(['','','이 종목 양도차익','', won(thisGain), 'sum']);
+    if(fxEffect !== 0 && buyFx !== sellFx){
+      rows.push(['','','환율 효과', (fxEffect > 0 ? '환율 상승분' : '환율 하락분') + ' · 차익에 포함됩니다',
+                 (fxEffect > 0 ? '+' : '−') + won(Math.abs(fxEffect)), 'muted', 'kfx']);
+      badges.push([fxEffect > 0 ? '' : 'warn', (fxEffect > 0 ? '환차익 ' : '환차손 ') + comma(Math.abs(fxEffect)) + '원']);
+    }
+    gain = Math.max(0, thisGain) + num($('kOtherGain'));
+    loss = Math.max(0, -thisGain) + num($('kOtherLoss'));
+    fee = 0;
+    if(num($('kOtherGain')) || num($('kOtherLoss'))){
+      rows.push(['','','같은 해 다른 종목','이익 ' + comma(num($('kOtherGain'))) + '원 · 손실 ' + comma(num($('kOtherLoss'))) + '원',
+                 won(num($('kOtherGain')) - num($('kOtherLoss')))]);
+    }
+  } else {
+    gain = num($('kGain')); loss = num($('kLoss')); fee = num($('kFee'));
+    if(!gain && !loss){ clearLedger(K_IDS, K_EMPTY); toast('실현 손익을 입력하세요'); $('kGain').focus(); return; }
+    rows.push(['①','','이익 실현 합계','한 해 동안 이익을 낸 종목', won(gain)]);
+    if(loss) rows.push(['②','−','손실 실현 합계','같은 해 손실 종목과 통산', won(loss), '', 'kloss']);
+    if(fee)  rows.push(['③','−','거래 수수료','증권사 · 현지 수수료', won(fee)]);
+  }
+
+  var income = gain - loss - fee;
+  rows.push(['','','양도소득금액','손익을 모두 통산한 금액', won(income), 'sum']);
+
+  var ded = 0;
+  if(income > 0 && !$('kUsedBasic').checked) ded = Math.min(STOCK_DED, income);
+  rows.push(['④','−','기본공제', $('kUsedBasic').checked ? '올해 이미 사용' : '연 250만원 · 국내주식과 합산',
+             won(ded), ded ? '' : 'muted', 'kded']);
+  var base = Math.max(0, income - ded);
+  rows.push(['','','과세표준','', won(base), 'sum']);
+
+  var tax = base * STOCK_RATE;
+  var foreign = Math.min(num($('kForeign')), tax);
+  var afterF = Math.max(0, tax - foreign);
+  var local = Math.floor(afterF * STOCK_LOCAL);
+  var total = afterF + local;
+
+  rows.push(['⑤','×','세율','20% · 누진 없는 단일세율', '', 'muted', 'krate']);
+  rows.push(['','','양도소득세','', won(tax), 'sum']);
+  if(foreign) rows.push(['⑥','−','외국납부세액공제','', won(foreign)]);
+  rows.push(['⑦','+','지방소득세','양도소득세의 10%', won(local)]);
+  rows.push(['','','총 부담세액','', won(total), 'final']);
+  if(income > 0) rows.push(['','','실효세율','총부담세액 ÷ 양도소득금액', (Math.round(total / income * 1000) / 10) + '%']);
+
+  /* 세금을 0으로 만들려면 손실을 얼마나 실현해야 하는가 */
+  var needLoss = Math.max(0, income - (ded ? STOCK_DED : 0));
+  if(needLoss > 0){
+    rows.push(['','','세금이 0이 되는 손실 규모','연말에 이만큼 손실을 실현하면', won(needLoss), 'sum', 'kloss']);
+  }
+
+  if(income <= 0){ badges.push(['','납부세액 없음 · 통산 결과 손실']); }
+  else if(base === 0){ badges.push(['','기본공제 범위 내 · 세금 없음']); }
+  else { badges.push(['warn','세율 22%']); }
+  if(loss) badges.push(['','손익통산 ' + comma(loss) + '원']);
+
+  var now = new Date();
+  var due = (now.getMonth() >= 0 ? now.getFullYear() + 1 : now.getFullYear());
+  notes.push('<b>신고기한</b> 양도한 다음 해 <b>5월 1일부터 31일까지</b> 홈택스에서 확정신고합니다. 예정신고는 없습니다. 손실이 나서 낼 세금이 없어도 신고하는 편이 안전합니다.');
+  notes.push('과세기간은 <b>1월 1일부터 12월 31일까지 결제된</b> 매도분입니다. 매도 주문일이 아니라 결제일 기준이라 연말 거래는 해가 넘어갈 수 있습니다.');
+  if(needLoss > 0){
+    notes.push('<b>연말 손실 실현.</b> 지금 손실 중인 종목을 <b>' + comma(needLoss) + '원</b>만큼 팔면 세금이 0원이 됩니다. 팔고 바로 다시 사도 됩니다. 다만 재매수하면 매수단가가 낮아져 다음 해 양도차익이 커집니다.');
+  }
+  notes.push('손익통산은 <b>같은 과세기간 안에서만</b> 됩니다. 올해 손실은 내년으로 이월되지 않습니다.');
+  notes.push('수익이 큰 종목은 <b>해를 나눠 매도</b>하면 250만원 공제를 매년 받습니다. 12월과 다음 해 1월로 쪼개는 것만으로 55만원을 아낄 수 있습니다.');
+  notes.push('기본공제 250만원은 <b>국내주식 양도소득과 합쳐서</b> 연 1회입니다. 국내 대주주 요건 등으로 이미 공제를 받았다면 위에서 체크하십시오.');
+  notes.push('배우자에게 증여한 뒤 <b>1년 안에</b> 팔면 이월과세가 적용되어 증여자의 당초 취득가액으로 계산됩니다. 증여를 통한 절세는 1년을 넘겨야 합니다.');
+  notes.push('취득가액은 증권사가 적용하는 방식(이동평균법 등)에 따라 달라질 수 있습니다. 증권사 양도소득 조회 자료와 대조하십시오.');
+
+  renderLedger(K_IDS, { rows:rows, badges:badges, notes:notes,
+    krw: korean(total) || '0원', title:'해외주식 양도소득세', slug:'foreign-stock-tax' });
+}
+
 /* ================= 취득세 ================= */
 var tCount = 1;
 var T_IDS = { out:'tOut', stale:'tStale', badges:'tBadges', foot:'tFoot', pdfbar:'tPdfbar', dateNote:'tDateNote' };
@@ -4161,6 +4536,34 @@ $('pReset').addEventListener('click', function(){
 $('pFreeHelp').addEventListener('click', function(){ openModal($('pfreeMask')); });
 $('pChildHelp').addEventListener('click', function(){ openModal($('pchildMask')); });
 
+['kGain','kLoss','kFee','kForeign','kOtherGain','kOtherLoss'].forEach(function(id){
+  $(id).addEventListener('input', function(){
+    var raw = digits($(id).value); if(raw.length>15) raw = raw.slice(0,15);
+    $(id).value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+    kInput();
+  });
+});
+['kSellUsd','kSellFx','kBuyUsd','kBuyFx','kFeeUsd'].forEach(function(id){ $(id).addEventListener('input', kInput); });
+$('kUsedBasic').addEventListener('change', kInput);
+Array.prototype.forEach.call($('kModeSeg').querySelectorAll('button'), function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('kModeSeg').querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true'); kMode = b.getAttribute('data-v'); kInput();
+  });
+});
+$('kCalc').addEventListener('click', function(){ kRun(); if(window.innerWidth < 940) document.querySelector('#scr-stock .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
+$('kReset').addEventListener('click', function(){
+  ['kGain','kLoss','kFee','kForeign','kSellUsd','kSellFx','kBuyUsd','kBuyFx','kFeeUsd','kOtherGain','kOtherLoss'].forEach(function(id){ $(id).value=''; });
+  $('kUsedBasic').checked=false; kMode='krw';
+  Array.prototype.forEach.call($('kModeSeg').querySelectorAll('button'), function(x){
+    x.setAttribute('aria-pressed', x.getAttribute('data-v')==='krw' ? 'true':'false'); });
+  kHints(); clearLedger(K_IDS, K_EMPTY);
+});
+['kHowHelp','kLossHelp','kFxHelp','kForeignHelp'].forEach(function(id){
+  var m = { kHowHelp:'khow', kLossHelp:'kloss', kFxHelp:'kfx', kForeignHelp:'kforeign' }[id];
+  $(id).addEventListener('click', function(){ openModal($(m + 'Mask')); });
+});
+
 ['tPrice','cEstate','cGift'].forEach(function(id){
   $(id).addEventListener('input', function(){
     var raw = digits($(id).value); if(raw.length>15) raw = raw.slice(0,15);
@@ -4278,7 +4681,7 @@ $('lReset').addEventListener('click', function(){
 });
 $('lStep').addEventListener('input', lInput);
 $('lTypeHelp').addEventListener('click', function(){ openModal($('ltypeMask')); });
-['jOut','lOut','tOut','cOut','pOut','iOut'].forEach(function(id){
+['jOut','lOut','tOut','cOut','pOut','kOut','iOut'].forEach(function(id){
   $(id).addEventListener('click', function(e){
     var b = e.target;
     while(b && b !== this && !b.getAttribute) b = b.parentNode;
@@ -5000,6 +5403,7 @@ jHints();
 lHints();
 tHints();
 cHints();
+kHints();
 pHints();
 iHints();
 go('home');
