@@ -1048,6 +1048,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <label class="lb" for="sPrior">② 사전증여재산 <button class="help" id="sPriorHelp" type="button" aria-label="설명 보기">?</button></label>
         <div class="unit"><input type="text" id="sPrior" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="sPriorK"></div>
+        <div id="sPriorSpWrap" style="display:none;margin-top:10px">
+          <label class="lb" for="sPriorSpouse" style="font-size:11.5px">그중 <b>배우자</b>가 받은 금액 <button class="help" id="sPriorSpHelp" type="button" aria-label="설명">?</button></label>
+          <div class="unit"><input type="text" id="sPriorSpouse" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+          <div class="hint" id="sPriorSpouseK"></div>
+        </div>
         <div class="quick" data-target="sPrior">
           <button type="button" data-add="1000000">+100만</button>
           <button type="button" data-add="10000000">+1,000만</button>
@@ -1057,6 +1062,11 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <button type="button" class="clear" data-clear>지우기</button>
         </div>
 
+      </div>
+      <div class="field" id="sPriorSpouseWrap">
+        <label class="lb" for="sPriorSpouse">그중 <b>배우자</b>가 받은 금액 <button class="help" id="sPriorSpHelp" type="button" aria-label="설명">?</button></label>
+        <div class="unit"><input type="text" id="sPriorSpouse" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sPriorSpouseK"></div>
       </div>
       <div class="field">
         <label class="lb" for="sDebt">③ 채무 · 공과금</label>
@@ -2869,6 +2879,26 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   </div>
 </div>
 
+<!-- ============ 배우자 사전증여 모달 ============ -->
+<div class="mask" id="spriorspMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spsTitle">
+    <div class="mhd"><h3 id="spsTitle">배우자가 미리 받은 증여</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>합산되는 사전증여재산 중 <b>배우자에게 간 몫</b>을 따로 적습니다. 배우자상속공제 한도를 구할 때 이 금액을 빼야 하기 때문입니다.</p>
+
+      <h4>왜 빼나</h4>
+      <p>배우자상속공제 한도는 <b>배우자가 상속으로 받을 수 있는 최대치</b>인 법정상속분입니다. 그런데 이미 증여로 받아 간 것이 있으면 그만큼은 상속으로 받을 몫에서 앞당겨 쓴 셈입니다.</p>
+      <p>한도 = 과세가액 × 법정상속분 <b>− 배우자가 사전증여받은 재산의 증여세 과세표준</b></p>
+      <p>증여세 과세표준이므로 배우자 증여재산공제 6억원을 뺀 금액입니다. 6억원 이하를 증여받았다면 차감액이 0원이라 한도에 영향이 없습니다.</p>
+
+      <div class="callout"><p><b>배우자에게 미리 증여하면 상속공제가 줄어듭니다.</b> 6억원까지는 증여세도 없고 한도에도 영향이 없어 유리하지만, 그 이상을 미리 넘기면 나중에 배우자상속공제 한도가 그만큼 깎입니다.</p>
+      <p>배우자 사전증여는 <b>6억원까지</b>가 실익이 뚜렷한 구간입니다.</p></div>
+
+      <p>배우자가 받은 사전증여가 없으면 비워 두십시오. 나머지 금액은 자녀 등 다른 상속인이 받은 것으로 보고 계산합니다.</p>
+    </div>
+  </div>
+</div>
+
 <!-- ============ 사전증여 합산(상속) 모달 ============ -->
 <div class="mask" id="spriorMask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="spTitle">
@@ -3760,7 +3790,7 @@ function gRun(){
 }
 
 /* ================= 상속세 ================= */
-var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid'];
+var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid','sPriorSpouse'];
 function spouseShare(){ return childCount > 0 ? 1.5 / (1.5 + childCount) : 1; }
 function shareText(){
   if(childCount === 0) return '배우자 단독 · 100%';
@@ -3773,6 +3803,8 @@ function sHints(){
   var on2 = $('s2nd').checked && $('sSpouse').checked;
   $('s2Wrap').style.display = on2 ? '' : 'none';
   $('sSpouseOwnK').textContent = korean(num($('sSpouseOwn')));
+  $('sPriorSpouseK').textContent = korean(num($('sPriorSpouse')));
+  $('sPriorSpWrap').style.display = ($('sSpouse').checked && num($('sPrior')) > 0) ? '' : 'none';
   var rr = reRate(s2Year);
   $('s2YearK').textContent = rr > 0
     ? ('단기 재상속 공제 ' + Math.round(rr * 100) + '% 적용')
@@ -3793,18 +3825,24 @@ function sHints(){
   $('sPaid').readOnly = auto;
   if(auto){
     var prior = num($('sPrior'));
+    var sp2 = Math.min(num($('sPriorSpouse')), prior);
+    var other = Math.max(0, prior - sp2);
     var sel = $('sPriorRel').value;
     var relKey = (sel === 'skipAdult') ? 'linealAdult' : sel;
-    var r = priorGiftTax(prior, relKey, sel === 'skipAdult');
-    $('sPaid').value = r.tax ? comma(r.tax) : '';
+    var r = priorGiftTax(other, relKey, sel === 'skipAdult');
+    var rs = priorGiftTax(sp2, 'spouse', false);
+    var total = r.tax + rs.tax;
+    $('sPaid').value = total ? comma(total) : '';
     $('sPaidK').textContent = prior
-      ? (r.tax ? ('과세표준 ' + comma(r.base) + '원 × ' + Math.round(r.rate*100) + '%' + (r.sur ? ' + 할증' : ''))
-               : '공제 범위 내 · 세액 없음')
+      ? (total ? (sp2 > 0 ? ('배우자분 ' + comma(rs.tax) + '원 + 그 외 ' + comma(r.tax) + '원')
+                          : ('과세표준 ' + comma(r.base) + '원 × ' + Math.round(r.rate*100) + '%' + (r.sur ? ' + 할증' : '')))
+                : '공제 범위 내 · 세액 없음')
       : '';
   } else {
     $('sPaidK').textContent = korean(num($('sPaid')));
   }
-  ['sAsset','sPrior','sDebt','sFuneral','sFin','sHomeAmt'].forEach(function(id){
+  $('sPriorSpouseWrap').style.display = ($('sSpouse').checked && num($('sPrior')) > 0) ? '' : 'none';
+  ['sAsset','sPrior','sDebt','sFuneral','sFin','sHomeAmt','sPriorSpouse'].forEach(function(id){
     $(id+'K').textContent = korean(num($(id)));
   });
   $('sSpouseAmtK').textContent = $('sSpouse').checked
@@ -3837,17 +3875,22 @@ function sRun(){
     lump = 500000000; lumpLabel = '일괄공제 (기초 + 인적공제보다 유리)';
   }
 
+  /* 배우자가 미리 받은 증여의 과세표준 — 법정상속분 한도에서 빼야 한다 */
+  var spPrior = Math.min(num($('sPriorSpouse')), prior);
+  var spPriorBase = spPrior > 0 ? Math.max(0, spPrior - GIFT_DED.spouse[0]) : 0;
+
   /* 배우자상속공제 */
   var spouseDed = 0, spouseLabel = '';
   if(hasSpouse){
     var share = childCount > 0 ? 1.5 / (1.5 + childCount) : 1;
-    var limit = Math.min(taxable * share, 3000000000);
+    var limit = Math.max(0, Math.min(taxable * share - spPriorBase, 3000000000));
     if(spouseGet < 500000000){
       spouseDed = 500000000; spouseLabel = '실제 상속액 5억원 미만 — 최소 5억원 공제';
     } else {
       spouseDed = Math.min(spouseGet, Math.max(limit, 500000000));
       spouseLabel = ($('sLegal').checked ? shareText() + ' · ' : '')
-        + '한도 ' + comma(Math.round(limit)) + '원';
+        + '한도 ' + comma(Math.round(limit)) + '원'
+        + (spPriorBase > 0 ? ' (사전증여 과세표준 ' + comma(Math.round(spPriorBase)) + '원 차감 후)' : '');
     }
   }
 
@@ -3865,7 +3908,7 @@ function sRun(){
   /* 배우자 몫을 바꿔 가며 1차 · 2차를 다시 계산하기 위한 함수 */
   var skipOn = $('sSkip').checked, reportOn = $('sReport').checked;
   var shareR = childCount > 0 ? 1.5 / (1.5 + childCount) : 1;
-  var spLimit = Math.min(taxable * shareR, 3000000000);
+  var spLimit = Math.max(0, Math.min(taxable * shareR - spPriorBase, 3000000000));
   function calcFirst(sg){
     var sd = 0;
     if(hasSpouse) sd = (sg < 500000000) ? 500000000 : Math.min(sg, Math.max(spLimit, 500000000));
@@ -3899,7 +3942,9 @@ function sRun(){
   /* 공제적용 종합한도 — 상증세법 §24
      사전증여재산의 과세표준만큼 상속공제 한도가 줄어든다 */
   var priorRelKey = ($('sPriorRel').value === 'skipAdult') ? 'linealAdult' : $('sPriorRel').value;
-  var priorBase = prior > 0 ? Math.max(0, prior - (GIFT_DED[priorRelKey] ? GIFT_DED[priorRelKey][0] : 0)) : 0;
+  var priorOther = Math.max(0, prior - spPrior);
+  var priorBase = (priorOther > 0 ? Math.max(0, priorOther - (GIFT_DED[priorRelKey] ? GIFT_DED[priorRelKey][0] : 0)) : 0)
+                + spPriorBase;
   var dedCap = Math.max(0, taxable - priorBase);
   var dedRaw = lump + spouseDed + finDed + homeDed;
   var dedTotal = Math.min(dedRaw, taxable, dedCap);
@@ -3955,6 +4000,7 @@ function sRun(){
   if(hasSpouse && childCount === 0) notes.push('배우자가 단독으로 상속받는 경우 <b>일괄공제 5억원을 적용할 수 없습니다.</b> 기초공제 2억원과 인적공제만 적용됩니다.');
   if(prior) notes.push('사전증여재산은 상속인은 10년, 상속인이 아닌 자는 5년 이내분을 합산하고, 당시 낸 증여세 산출세액을 <b>증여세액공제</b>로 뺍니다.');
   if(capHit) notes.push('<b>상속공제 종합한도가 적용됐습니다.</b> 사전증여가 있으면 그 과세표준만큼 상속공제 한도가 줄어듭니다. 미리 증여해 두고 상속공제까지 다 받는 것을 막는 규정입니다.');
+  if(spPriorBase > 0) notes.push('배우자가 미리 받은 증여 ' + comma(spPrior) + '원의 <b>과세표준 ' + comma(Math.round(spPriorBase)) + '원</b>을 배우자상속공제 한도에서 뺐습니다. 미리 받은 만큼 상속으로 받을 수 있는 몫이 줄기 때문입니다.');
   if(hasSpouse && spouseGet > taxable) notes.push('<b>배우자 상속액이 과세가액보다 큽니다.</b> 입력값을 확인하십시오. 공제는 법정상속분 한도까지만 적용됩니다.');
   if($('sAuto').checked && prior) notes.push('사전증여분 산출세액을 <b>자동 계산</b>했습니다. 그 증여가 해당 관계에서 10년 내 첫 증여였다는 전제입니다. 증여가 여러 건이면 체크를 풀고 실제 신고서상 산출세액 합계를 넣으십시오.');
   if(sCapped) notes.push('입력하신 증여세액이 <b>공제 한도를 넘어</b> 한도까지만 반영했습니다. 사전증여분이 상속세 과세표준에서 차지하는 몫이 한도입니다.');
@@ -4957,6 +5003,12 @@ $('gPayerHelp').addEventListener('click', function(e){ e.preventDefault(); openM
 });
 $('gBurdenHelp').addEventListener('click', function(){ openModal($('gburdenMask')); });
 ['sSpouse','sHome','sSkip','sReport','sAuto','sPriorRel','sLegal','s2nd'].forEach(function(id){ $(id).addEventListener('change', sInput); });
+$('sPriorSpouse').addEventListener('input', function(){
+  var raw = digits($('sPriorSpouse').value); if(raw.length>15) raw = raw.slice(0,15);
+  $('sPriorSpouse').value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+  sInput();
+});
+$('sPriorSpHelp').addEventListener('click', function(){ openModal($('spriorspMask')); });
 $('sSpouseOwn').addEventListener('input', function(){
   var raw = digits($('sSpouseOwn').value); if(raw.length>15) raw = raw.slice(0,15);
   $('sSpouseOwn').value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
@@ -5213,7 +5265,8 @@ $('sReset').addEventListener('click', function(){
   S_NUM.forEach(function(id){ $(id).value=''; });
   $('sSpouse').checked=true; $('sHome').checked=false; $('sSkip').checked=false;
   $('sReport').checked=true; $('sAuto').checked=true; $('sPriorRel').value='linealAdult';
-  $('sLegal').checked=true; $('s2nd').checked=false; $('sSpouseOwn').value=''; s2Year=5; sBestAmt=0;
+  $('sLegal').checked=true; $('s2nd').checked=false; $('sSpouseOwn').value=''; $('sPriorSpouse').value='';
+  s2Year=5; sBestAmt=0;
   Array.prototype.forEach.call($('s2YearSeg').querySelectorAll('button'), function(x){
     x.setAttribute('aria-pressed', x.getAttribute('data-v')==='5' ? 'true':'false'); });
   childCount=2;
@@ -5232,6 +5285,7 @@ $('sReset').addEventListener('click', function(){
 });
 $('gPriorHelp').addEventListener('click', function(){ openModal($('gpriorMask')); });
 $('sPriorHelp').addEventListener('click', function(){ openModal($('spriorMask')); });
+$('sPriorSpHelp').addEventListener('click', function(){ openModal($('spriorspMask')); });
 $('gDedHelp').addEventListener('click', function(){ openModal($('gdedMask')); });
 $('gCreditHelp').addEventListener('click', function(){ openModal($('gcreditMask')); });
 $('gCarryHelp').addEventListener('click', function(){ openModal($('carryMask')); });
