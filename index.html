@@ -1430,7 +1430,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
     <div class="hd"><span class="idx">A</span><h2>보유 주택</h2><span class="note">6월 1일 기준</span></div>
     <div class="bd">
       <div class="field">
-        <label class="lb" for="jPrice">공시가격 합계 <button class="help" id="jPriceHelp" type="button" aria-label="공시가격 설명">?</button><span class="req">*</span></label>
+        <label class="lb" for="jPrice"><span id="jPriceLb">공시가격</span> <button class="help" id="jPriceHelp" type="button" aria-label="공시가격 설명">?</button><span style="font-weight:400;color:var(--ink-3)">지분 나누기 전 전체 금액</span><span class="req">*</span></label>
         <div class="unit"><input type="text" id="jPrice" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="jPriceK"></div>
         <div class="quick" data-target="jPrice">
@@ -1441,9 +1441,12 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <button type="button" data-add="5000000000">+50억</button>
           <button type="button" class="clear" data-clear>지우기</button>
         </div>
+        <div id="jMoreWrap"></div>
+        <button class="btn" type="button" id="jAddHouse" style="width:100%;margin-top:10px;padding:10px;font-size:12.5px">+ 주택 추가 <span style="font-weight:400;color:var(--ink-3)">여러 채면 주택마다 따로 넣으세요</span></button>
+        <div class="hint" id="jSumK" style="text-align:left;margin-top:8px"></div>
       </div>
       <div class="field">
-        <label class="lb">주택 수 <button class="help" id="jRateHelp" type="button" aria-label="세율표 보기">?</button></label>
+        <label class="lb">주택 수 <button class="help" id="jRateHelp" type="button" aria-label="세율표 보기">?</button><span style="font-weight:400;color:var(--ink-3)" id="jCntAuto"></span></label>
         <div class="seg" id="jCntSeg">
           <button type="button" data-v="1" aria-pressed="true">1주택<small>12억 공제</small></button>
           <button type="button" data-v="2" aria-pressed="false">2주택<small>9억 공제</small></button>
@@ -1452,7 +1455,14 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       </div>
       <div class="field" id="jSoleWrap">
         <label class="chk" style="padding-top:0"><input type="checkbox" id="jSole" checked>
-          <span>1세대 1주택자 단독명의<em>기본공제 12억원과 연령 · 보유 세액공제를 적용합니다. 부부공동명의는 각자 9억원씩 공제받거나 특례를 신청할 수 있습니다</em></span></label>
+          <span>1세대 1주택으로 계산<em>단독명의이거나 부부 공동명의 1주택 특례를 신청한 경우입니다. 기본공제 12억원과 연령 · 보유 세액공제를 적용하며, 종부세는 지분 전체를 기준으로 계산합니다</em></span></label>
+        <label class="chk" style="padding-top:0"><input type="checkbox" id="jJoint">
+          <span>공동명의 <button class="help" id="jShareHelp" type="button" aria-label="지분 설명" style="margin-left:2px">?</button>
+            <em>재산세는 주택 전체로 계산한 뒤 지분만큼 나눠 냅니다</em></span></label>
+        <div id="jShareWrap" style="display:none;margin:2px 0 4px 30px">
+          <div class="unit" style="max-width:160px"><input type="text" id="jShare" inputmode="numeric" placeholder="50"><span class="won">%</span></div>
+          <div class="hint" id="jShareK" style="text-align:left"></div>
+        </div>
         <label class="chk"><input type="checkbox" id="jCity">
           <span>도시지역에 소재<em>재산세에 도시지역분(과세표준의 0.14%)이 더 붙습니다. 고지서에 도시지역분 항목이 있으면 체크하세요</em></span></label>
       </div>
@@ -2303,6 +2313,37 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <p>비과세를 받기 위한 2년 거주요건과, 장기보유특별공제 1세대 1주택 표를 적용받기 위한 2년 거주요건이 모두 면제됩니다.</p>
       <div class="callout"><p><b>공제율까지 채워주지는 않습니다.</b> 표를 쓸 자격만 생기고, 거주기간에 따른 공제율은 <b>실제로 산 기간</b>으로 계산합니다. 한 번도 살지 않았다면 거주분 공제는 0%이고 보유분만 받습니다.</p></div>
       <p>직전 임대차계약은 그 주택을 취득한 뒤 체결한 것이어야 합니다. 매수하면서 승계받은 임대차계약은 직전 계약으로 인정되지 않습니다.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 공동명의 지분 모달 ============ -->
+<div class="mask" id="jshareMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="jshTitle">
+    <div class="mhd"><h3 id="jshTitle">공동명의와 지분</h3><button type="button" data-close aria-label="닫기">✕</button></div>
+    <div class="mbd">
+      <p>공시가격 칸에는 <b>주택 전체 금액</b>을 넣고, 여기에 본인 지분을 넣으십시오. 부부가 절반씩이면 50입니다.</p>
+
+      <h4>재산세와 종부세가 다르게 움직입니다</h4>
+      <table class="mtable">
+        <tr><th></th><th>계산 방식</th></tr>
+        <tr><td>재산세</td><td>주택 전체로 세액을 구한 뒤 <b>지분만큼 나눔</b></td></tr>
+        <tr><td>종부세</td><td><b>사람별로</b> 자기 지분에 대해 과세</td></tr>
+      </table>
+
+      <div class="callout"><p><b>재산세를 지분만큼만 떼어 계산하면 안 됩니다.</b> 재산세는 누진세율이라 금액이 작아지면 세율 구간이 내려갑니다.</p>
+      <p>공시가격 10억을 부부가 절반씩 가진 경우, 전체로 계산하면 117만원이고 절반은 <b>58만 5,000원</b>입니다. 그런데 5억만 따로 계산하면 38만 2,500원이 되어 20만원이 적습니다. 지방세법 제113조는 앞의 방식을 따릅니다.</p></div>
+
+      <h4>부부 공동명의 1주택 특례</h4>
+      <p>부부가 함께 한 채만 가진 경우, 두 가지 중 유리한 쪽을 고를 수 있습니다.</p>
+      <ul>
+        <li><b>특례 미신청</b> — 각자 자기 지분에 대해 9억원씩 공제. 합치면 18억원까지 종부세가 없습니다. 다만 연령 · 보유 세액공제는 받지 못합니다.</li>
+        <li><b>특례 신청</b> — 지분 전체를 한 사람이 가진 것으로 보아 12억원 공제. 대신 <b>연령 · 보유 세액공제</b>를 최대 80%까지 받습니다.</li>
+      </ul>
+      <p>위의 <b>1세대 1주택으로 계산</b>을 켜면 특례를 신청한 방식으로, 끄면 각자 9억원씩 공제받는 방식으로 계산됩니다. 두 번 돌려 비교해 보십시오.</p>
+
+      <div class="callout"><p><b>고령이고 오래 보유했다면 특례가 유리합니다.</b> 공제액은 18억에서 12억으로 줄지만 세액공제 80%가 붙습니다. 반대로 젊고 보유기간이 짧으면 각자 9억씩 받는 편이 낫습니다.</p>
+      <p>특례는 매년 9월 16일부터 30일 사이에 신청하며, 한 번 신청하면 계속 적용됩니다.</p></div>
     </div>
   </div>
 </div>
@@ -4800,40 +4841,121 @@ var J_EMPTY = '<b>공시가격을 입력하세요</b>보유 주택 정보를 채
 
 function jHints(){
   $('jPriceK').textContent = korean(num($('jPrice')));
+  for(var hi = 1; hi <= jHouseN; hi++){
+    var hk = $('jHouse' + hi + 'K');
+    if(hk) hk.textContent = korean(num($('jHouse' + hi)));
+  }
+  var hs = jHouseList(), hsum = hs.reduce(function(a,c){ return a+c; }, 0);
+  $('jPriceLb').textContent = (jHouseN > 0) ? '주택 1 공시가격' : '공시가격';
+  $('jSumK').innerHTML = hs.length > 1
+    ? ('<b>' + hs.length + '채 합계 ' + comma(hsum) + '원</b> · 재산세는 주택마다 따로 계산합니다') : '';
+  $('jCntAuto').textContent = hs.length > 1 ? ('입력한 주택 ' + hs.length + '채') : '';
   $('jPrevK').textContent = korean(num($('jPrev')));
   var sole = jCount === 1;
   $('jSoleWrap').style.display = sole ? '' : 'none';
+  $('jShareWrap').style.display = $('jJoint').checked ? '' : 'none';
+  if($('jJoint').checked){
+    var sr = Math.min(100, Math.max(1, parseInt(digits($('jShare').value) || '100', 10)));
+    var pv = num($('jPrice'));
+    $('jShareK').textContent = pv ? ('내 지분 공시가격 ' + comma(Math.round(pv * sr / 100)) + '원') : '';
+  }
   $('jCreditCard').style.display = (sole && $('jSole').checked) ? '' : 'none';
 }
+/* 주택별 공시가격 — 재산세는 지방세법 §113③ 에 따라 주택별로 세액을 산정한다 */
+var jHouseN = 0;
+function jHouseList(){
+  var arr = [num($('jPrice'))];
+  for(var i = 1; i <= jHouseN; i++){
+    var el = $('jHouse' + i);
+    if(el) arr.push(num(el));
+  }
+  return arr.filter(function(v){ return v > 0; });
+}
+function addHouse(){
+  if(jHouseN >= 5){ toast('주택은 6채까지 넣을 수 있습니다'); return; }
+  jHouseN++;
+  var n = jHouseN;
+  var box = document.createElement('div');
+  box.className = 'field';
+  box.id = 'jHouseWrap' + n;
+  box.style.marginTop = '12px'; box.style.marginBottom = '0';
+  box.innerHTML = '<label class="lb" for="jHouse' + n + '">주택 ' + (n+1) + ' 공시가격'
+    + '<button type="button" class="btn" data-del="' + n + '" style="margin-left:auto;padding:4px 9px;font-size:11px">삭제</button></label>'
+    + '<div class="unit"><input type="text" id="jHouse' + n + '" inputmode="numeric" placeholder="0"><span class="won">원</span></div>'
+    + '<div class="hint" id="jHouse' + n + 'K"></div>'
+    + '<div class="quick" data-target="jHouse' + n + '">'
+    + '<button type="button" data-add="10000000">+1,000만</button>'
+    + '<button type="button" data-add="100000000">+1억</button>'
+    + '<button type="button" data-add="500000000">+5억</button>'
+    + '<button type="button" data-add="1000000000">+10억</button>'
+    + '<button type="button" data-add="5000000000">+50억</button>'
+    + '<button type="button" class="clear" data-clear>지우기</button></div>';
+  $('jMoreWrap').appendChild(box);
+  $('jHouse' + n).addEventListener('input', function(){
+    var raw = digits(this.value).slice(0,15);
+    this.value = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+    jInput();
+  });
+  /* 나중에 만들어진 금액 버튼이라 따로 연결해 준다 */
+  Array.prototype.forEach.call(box.querySelectorAll('.quick button'), function(qb){
+    qb.addEventListener('click', function(){
+      var el = $('jHouse' + n);
+      var cur = num(el);
+      if(qb.hasAttribute('data-clear')) cur = 0;
+      else cur += parseInt(qb.getAttribute('data-add'), 10);
+      el.value = cur ? cur.toLocaleString('ko-KR') : '';
+      jInput();
+    });
+  });
+  box.querySelector('[data-del]').addEventListener('click', function(){
+    box.parentNode.removeChild(box); jInput();
+  });
+  jInput();
+}
+
 function jInput(){ jHints(); if(RPT.rows.length && current === 'jongbu') $('jStale').style.display = ''; }
 
 function jRun(){
   jHints();
-  var price = num($('jPrice'));
+  var houses = jHouseList();
+  var price = houses.reduce(function(a,c){ return a+c; }, 0);
   if(!price){ clearLedger(J_IDS, J_EMPTY); toast('공시가격을 입력하세요'); $('jPrice').focus(); return; }
 
   var single = (jCount === 1 && $('jSole').checked);
+  var jShareRate = $('jJoint').checked
+    ? Math.min(100, Math.max(1, parseInt(digits($('jShare').value) || '100', 10))) / 100 : 1;
+  /* 부부 공동명의 1주택 특례를 신청하면 지분 전체를 한 사람이 가진 것으로 보아 계산한다.
+     신청하지 않으면 사람별로 자기 지분만큼만 과세된다. */
+  var jongPrice = single ? price : Math.round(price * jShareRate);
   var basic = single ? 1200000000 : 900000000;
-  var over = Math.max(0, price - basic);
+  var over = Math.max(0, jongPrice - basic);
   var FAIR = 0.6;
   var taxBase = over * FAIR;
   var table = (jCount >= 3) ? JONG_BR_HIGH : JONG_BR_LOW;
   var pr = byBracket(taxBase, table);
   var calc = taxBase > 0 ? pr.tax : 0;
 
-  /* ── 재산세 ── */
+  /* ── 재산세 ──
+     지방세법 §113 : 주택별로 세액을 산정한 뒤 지분 비율로 나눈다 */
+  var share = $('jJoint').checked
+    ? Math.min(100, Math.max(1, parseInt(digits($('jShare').value) || '100', 10))) / 100 : 1;
   var pFair = propFairRate(price, single);
-  var propBase = price * pFair;                      // 주택분 재산세 과세표준
+  var propBase = price * pFair;                      // 주택 전체 기준 재산세 과세표준
   var useSpecial = single && price <= 900000000;     // 1세대1주택 9억 이하 특례세율
   var propTable = useSpecial ? PROP_BR_1H : PROP_BR;
-  var propInfo = byBracket(propBase, propTable);
-  var propTax = Math.floor(propInfo.tax / 10) * 10;  // 재산세 본세
+  var propInfo = byBracket(propBase, propTable);     // 합산 기준 — 중복분 산식의 분모
+  /* 재산세는 주택마다 따로 산정해 합친다 */
+  var propEach = houses.map(function(hp){ return byBracket(hp * pFair, propTable).tax; });
+  var propFull = propEach.reduce(function(a,c){ return a+c; }, 0);
+  var propTax = Math.floor(propFull * share / 10) * 10;   // 내 지분 몫
   var propEdu = Math.floor(propTax * 0.20 / 10) * 10; // 지방교육세
-  var propCity = $('jCity').checked ? Math.floor(propBase * 0.0014 / 10) * 10 : 0; // 도시지역분
+  var propCity = $('jCity').checked ? Math.floor(propBase * 0.0014 * share / 10) * 10 : 0; // 도시지역분
 
   /* 재산세 중복분 공제 — 종부세법 시행령 §4의2
      과세기준 초과금액 × 종부세 공정비율 × 재산세 공정비율 × 재산세율 */
-  var propCredit = Math.min(over * FAIR * pFair * propInfo.rate, calc);
+  /* 중복분 = 실제 부과 재산세 ÷ 합산 기준 재산세 × (중복 과표 × 재산세율) */
+  var dupBase = over * FAIR * pFair * propInfo.rate;
+  var propCredit = Math.min(propInfo.tax > 0 ? dupBase * (propFull / propInfo.tax) : dupBase, calc);
   var afterProp = Math.max(0, calc - propCredit);
 
   /* 연령 · 보유 세액공제 */
@@ -4855,16 +4977,26 @@ function jRun(){
 
   var rows = [], badges = [], notes = [];
   rows.push(['','','재산세 계산','7월 · 9월 부과', '', 'grp']);
-  rows.push(['','','재산세 과세표준', '공시가격 × 공정시장가액비율 ' + Math.round(pFair*100) + '%', won(propBase)]);
-  rows.push(['','×','재산세율', (useSpecial ? '1세대1주택 특례 · ' : '') + (Math.round(propInfo.rate*100000)/1000) + '%'
+  if(houses.length > 1){
+    rows.push(['','','주택별 재산세', houses.length + '채 · 주택마다 따로 산정', '', 'muted', 'jprop']);
+    houses.forEach(function(hp, i){
+      rows.push(['','','주택 ' + (i+1), '공시 ' + shortMoney(hp) + '원 · 과표 ' + comma(Math.round(hp*pFair)) + '원', won(propEach[i])]);
+    });
+  } else {
+    rows.push(['','','재산세 과세표준', '공시가격 × 공정시장가액비율 ' + Math.round(pFair*100) + '%', won(propBase)]);
+  }
+  if(houses.length === 1) rows.push(['','×','재산세율', (useSpecial ? '1세대1주택 특례 · ' : '') + (Math.round(propInfo.rate*100000)/1000) + '%'
     + (propInfo.ded ? ' · 누진공제 ' + comma(propInfo.ded) + '원' : ''), '', 'muted', 'jprop']);
-  rows.push(['','','재산세','', won(propTax), 'sum']);
+  rows.push(['','','재산세', share < 1 ? ('주택 전체 ' + comma(Math.round(propFull)) + '원 × 지분 ' + Math.round(share*100) + '%') : '', won(propTax), 'sum']);
   rows.push(['','+','지방교육세','재산세의 20%', won(propEdu)]);
   if(propCity) rows.push(['','+','도시지역분','재산세 과세표준의 0.14%', won(propCity)]);
   rows.push(['','','재산세 합계','', won(propTax + propEdu + propCity), 'sum']);
 
   rows.push(['','','종합부동산세 계산','12월 1일 ~ 15일 납부', '', 'grp']);
-  rows.push(['①','','공시가격 합계','6월 1일 기준', won(price)]);
+  rows.push(['①','','공시가격 합계',
+    single ? ('6월 1일 기준' + ($('jJoint').checked ? ' · 부부 1주택 특례로 지분 전체' : ''))
+           : ('6월 1일 기준' + ($('jJoint').checked ? (' · 전체 ' + shortMoney(price) + '원의 ' + Math.round(jShareRate*100) + '%') : '')),
+    won(jongPrice)]);
   rows.push(['②','−','기본공제', single ? '1세대 1주택 12억원' : '9억원', won(Math.min(basic, price))]);
   rows.push(['','','과세기준 초과금액','', won(over), 'sum']);
   rows.push(['③','×','공정시장가액비율','주택 60%', '', 'muted', 'fair']);
@@ -4874,7 +5006,8 @@ function jRun(){
     '', 'muted', 'jrate']);
   rows.push(['','','종부세 산출세액','', won(calc), 'sum']);
   rows.push(['⑤','−','재산세 중복분 공제',
-    '초과금액 × 60% × ' + Math.round(pFair*100) + '% × ' + (Math.round(propInfo.rate*100000)/1000) + '%',
+    '초과금액 × 60% × ' + Math.round(pFair*100) + '% × ' + (Math.round(propInfo.rate*100000)/1000) + '%'
+    + (houses.length > 1 ? ' × 주택별 안분' : ''),
     won(propCredit), '', 'jdup']);
   if(single) rows.push(['⑥','−','연령 · 보유 세액공제',
     creditRate ? ('연령 ' + jAge + '% + 보유 ' + jHold + '% = ' + Math.round(creditRate*100) + '%') : '해당 없음',
@@ -4896,6 +5029,7 @@ function jRun(){
   notes.push('재산세 중복분은 <b>과세기준 초과금액 × 종부세 공정시장가액비율 60% × 재산세 공정시장가액비율 ' + Math.round(pFair*100) + '% × 재산세율</b>로 계산했습니다. 종부세법 시행령 제4조의2의 산식입니다.');
   if(single) notes.push('1세대 1주택은 재산세 공정시장가액비율에 <b>특례</b>가 적용됩니다. 공시가격 3억원 이하 43%, 6억원 이하 44%, 6억원 초과 45%이며 그 밖에는 60%입니다.');
   if(useSpecial) notes.push('공시가격 9억원 이하 1세대 1주택이라 <b>재산세 특례세율</b>(0.05~0.35%)이 적용됐습니다. 2026년까지 한시 적용됩니다.');
+  if(houses.length > 1) notes.push('<b>재산세는 주택마다 따로 계산했습니다.</b> 지방세법 제113조에 따라 주택별로 세액을 산정합니다. 공시가격을 합쳐서 한 번에 계산하면 누진 구간이 올라가 실제보다 많게 나옵니다. 반면 <b>종합부동산세는 사람별로 합산</b>해 과세하므로 합친 금액으로 계산합니다.');
   notes.push('재산세는 7월과 9월에 나눠 부과되고 종합부동산세는 12월에 부과됩니다. 위 금액은 <b>한 해 보유세 총액</b>입니다.');
   if(prev > 0){
     notes.push('<b>세부담상한</b> 올해 재산세와 종부세를 합한 금액이 직전 연도의 150%를 넘으면 초과분을 종부세에서 깎아 줍니다. 이 계산에서는 올해 재산세를 ' + comma(Math.round(propTax)) + '원으로 산정했습니다.');
@@ -4905,7 +5039,12 @@ function jRun(){
     }
   }
   else notes.push('직전 연도 세액을 입력하면 <b>세부담상한</b>(직전 연도의 150%)까지 반영해 계산합니다.');
-  notes.push('종부세는 <b>사람별로</b> 과세합니다. 공동명의라면 본인 지분에 해당하는 공시가격만 입력하십시오.');
+  if($('jJoint').checked){
+    notes.push('<b>재산세는 주택 전체로 계산한 뒤 지분만큼 나눕니다.</b> 지분 몫만 따로 계산하면 누진 구간이 내려가 실제보다 적게 나옵니다. 지방세법 제113조에 따른 방식입니다.');
+    notes.push(single
+      ? '<b>부부 공동명의 1주택 특례</b>를 신청한 것으로 보아 종부세는 지분 전체를 기준으로 계산하고 12억원을 공제했습니다. 연령 · 보유 세액공제도 받을 수 있습니다.'
+      : '특례를 신청하지 않아 종부세는 <b>본인 지분만</b> 과세했습니다. 각자 9억원씩 공제받으며 연령 · 보유 세액공제는 없습니다. 위 체크를 켜면 특례 방식과 비교할 수 있습니다.');
+  }
   notes.push('단순 참고용 계산입니다. 합산배제 임대주택 · 사원용주택, 법인 보유분, 주택 외 토지분은 반영하지 않았습니다.');
 
   renderLedger(J_IDS, { rows:rows, badges:badges, notes:notes,
@@ -5218,7 +5357,15 @@ $('cReset').addEventListener('click', function(){
     jInput();
   });
 });
-['jSole','jCity'].forEach(function(id){ $(id).addEventListener('change', jInput); });
+['jSole','jCity','jJoint'].forEach(function(id){ $(id).addEventListener('change', jInput); });
+$('jShare').addEventListener('input', function(){
+  var v = digits($('jShare').value).slice(0,3);
+  if(v && parseInt(v,10) > 100) v = '100';
+  $('jShare').value = v;
+  jInput();
+});
+$('jShareHelp').addEventListener('click', function(e){ e.preventDefault(); openModal($('jshareMask')); });
+$('jAddHouse').addEventListener('click', addHouse);
 [['jCntSeg', function(v){ jCount = v; }], ['jAgeSeg', function(v){ jAge = v; }], ['jHoldSeg', function(v){ jHold = v; }]]
 .forEach(function(cfg){
   Array.prototype.forEach.call($(cfg[0]).querySelectorAll('button'), function(b){
@@ -5232,7 +5379,9 @@ $('cReset').addEventListener('click', function(){
 });
 $('jCalc').addEventListener('click', function(){ jRun(); if(window.innerWidth < 940) document.querySelector('#scr-jongbu .ledger').scrollIntoView({behavior:'smooth',block:'start'}); });
 $('jReset').addEventListener('click', function(){
-  $('jPrice').value=''; $('jPrev').value=''; $('jSole').checked=true; $('jCity').checked=false; jCount=1; jAge=0; jHold=0;
+  $('jPrice').value=''; $('jPrev').value=''; $('jSole').checked=true; $('jCity').checked=false;
+  $('jJoint').checked=false; $('jShare').value='';
+  $('jMoreWrap').innerHTML=''; jHouseN=0; jCount=1; jAge=0; jHold=0;
   [['jCntSeg','1'],['jAgeSeg','0'],['jHoldSeg','0']].forEach(function(c){
     Array.prototype.forEach.call($(c[0]).querySelectorAll('button'), function(x){
       x.setAttribute('aria-pressed', x.getAttribute('data-v')===c[1] ? 'true':'false'); });
