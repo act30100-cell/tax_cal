@@ -919,7 +919,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 
       </div>
       <div class="field">
-        <label class="lb" for="gDebt">③ 수증자가 인수한 채무 <button class="help" id="gBurdenHelp" type="button" aria-label="부담부증여 설명">?</button><span style="font-weight:400;color:var(--ink-3)">부담부증여</span></label>
+        <label class="lb" for="gDebt">③ 함께 넘기는 빚 <button class="help" id="gBurdenHelp" type="button" aria-label="부담부증여 설명">?</button><span style="font-weight:400;color:var(--ink-3)">전세보증금 · 대출</span></label>
+        <div class="hint" style="text-align:left;color:var(--ink-3);font-weight:400;margin-bottom:6px">받는 사람이 대신 갚기로 한 빚이 있으면 넣으세요. 없으면 비워 두시면 됩니다</div>
         <div class="unit"><input type="text" id="gDebt" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="gDebtK"></div>
         <div class="quick" data-target="gDebt">
@@ -933,9 +934,14 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 
       </div>
       <div id="gBurdenWrap" style="display:none">
-        <div class="info" style="margin-bottom:14px"><b>채무를 넘기면 그만큼은 유상양도입니다.</b> 수증자는 증여세를, 증여자는 채무액에 대한 <b>양도소득세</b>를 각각 냅니다. 아래를 채우면 증여자가 낼 양도세도 함께 계산합니다.</div>
+        <div class="info" style="margin-bottom:14px">
+          <b>빚을 함께 넘기면 세금이 둘로 갈립니다.</b> 이런 증여를 <b>부담부증여</b>라고 합니다.<br>
+          빚을 뺀 나머지는 공짜로 준 것이라 <b>받는 사람이 증여세</b>를, 빚만큼은 판 것으로 보아 <b>주는 사람이 양도소득세</b>를 냅니다.<br><br>
+          주는 사람의 양도세를 계산하려면 아래 세 가지가 필요합니다. 비워 두면 증여세만 계산됩니다.
+        </div>
         <div class="field">
-          <label class="lb" for="gAcqPrice">증여자의 당초 취득가액</label>
+          <label class="lb" for="gAcqPrice">① 주는 사람이 <b>처음 샀던 가격</b></label>
+          <div class="hint" style="text-align:left;color:var(--ink-3);font-weight:400;margin-bottom:6px">지금 시세가 아니라 매수 당시 금액입니다</div>
           <div class="unit"><input type="text" id="gAcqPrice" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
           <div class="hint" id="gAcqPriceK"></div>
         <div class="quick" data-target="gAcqPrice">
@@ -948,7 +954,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         </div>
         </div>
         <div class="field">
-          <label class="lb">증여자의 보유기간</label>
+          <label class="lb">② 주는 사람이 <b>갖고 있던 기간</b></label>
+          <div class="hint" style="text-align:left;color:var(--ink-3);font-weight:400;margin-bottom:6px">길수록 장기보유특별공제를 받아 양도세가 줄어듭니다</div>
           <div class="seg two" id="gHoldModeSeg">
             <button type="button" data-v="date" aria-pressed="true">날짜로 입력<small>정확하게</small></button>
             <button type="button" data-v="year" aria-pressed="false">햇수로 입력<small>간단하게</small></button>
@@ -973,7 +980,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <div class="hint" id="gHoldHint"></div>
         </div>
         <div class="field" style="margin-bottom:0">
-          <label class="lb" for="gAssetType">자산 종류</label>
+          <label class="lb" for="gAssetType">③ 자산 종류</label>
           <select id="gAssetType">
             <option value="house">주택</option>
             <option value="land">토지 · 건물</option>
@@ -3765,8 +3772,9 @@ function gRun(){
   var rows = [], badges = [], notes = [];
 
   /* 증여재산가액을 넣으면 세액까지 한 번에 계산한다 */
-  function giftOn(g){
-    var t = Math.max(0, g + prior - Math.min(debt, g));
+  function giftOn(g, debtOverride){
+    var dv = (debtOverride === undefined) ? debt : debtOverride;
+    var t = Math.max(0, g + prior - Math.min(dv, g));
     var dd = Math.min(relDed + marry, t);
     var tb = Math.max(0, t - dd);
     var p2 = gsProgressive(tb);
@@ -3855,6 +3863,26 @@ function gRun(){
     rows.push(['','','증여세 + 양도세 총 부담',
       '수증자 ' + shortMoney(payable) + '원 + 증여자 ' + shortMoney(bt.total) + '원',
       won(payable + bt.total), 'final']);
+
+    /* 빚을 넘기지 않았다면 어땠을지 나란히 놓는다 */
+    var plain = giftOn(payerPays ? giftAmt : amt, 0);
+    var btTotal = payable + bt.total;
+    var gap = plain.payable - btTotal;
+    rows.push(['','','빚 없이 전부 증여한다면',
+      '전세보증금을 돌려주거나 대출을 갚고 깨끗한 상태로 주는 경우 · 증여세만 부과',
+      won(plain.payable), 'sum']);
+    rows.push(['','','부담부증여로 달라지는 금액',
+      gap > 0 ? '부담부증여가 유리합니다' : (gap < 0 ? '부담부증여가 불리합니다' : '차이가 없습니다'),
+      won(Math.abs(gap)), 'sum']);
+    if(gap > 0) badges.push(['', '부담부증여로 ' + shortMoney(gap) + '원 절세']);
+    else if(gap < 0) badges.push(['warn', '부담부증여가 ' + shortMoney(-gap) + '원 불리']);
+    notes.push(gap > 0
+      ? ('<b>부담부증여가 유리합니다.</b> 빚을 미리 정리하고 깨끗한 상태로 주면 증여세만 ' + comma(Math.round(plain.payable)) + '원인데, 빚을 함께 넘기면 증여세와 양도세를 합쳐 ' + comma(Math.round(btTotal)) + '원입니다. ' + comma(Math.round(gap)) + '원 덜 냅니다.')
+      : (gap < 0
+        ? ('<b>부담부증여가 오히려 불리합니다.</b> 빚을 미리 정리하고 주면 ' + comma(Math.round(plain.payable)) + '원인데, 함께 넘기면 ' + comma(Math.round(btTotal)) + '원입니다. 양도세 부담이 증여세 절감액보다 큽니다.')
+        : '빚을 함께 넘기든 미리 정리하든 총 부담이 같습니다.'));
+    notes.push('<b>비교 대상이 무엇인지 유의하십시오.</b> 위 비교는 전세보증금을 세입자에게 돌려주거나 대출을 상환해 <b>빚이 없는 재산</b>을 주는 경우와 견준 것입니다. 그 돈을 마련하는 부담과 자금 출처는 별개로 따져야 합니다.');
+    notes.push('<b>받는 사람이 그 빚을 실제로 갚아야 인정됩니다.</b> 국세청이 사후관리로 원리금 상환 내역을 확인하며, 주는 사람이 대신 갚아준 사실이 드러나면 그 시점에 다시 증여세가 과세됩니다. 소득이 없는 자녀에게 넘길 때 특히 문제가 됩니다.');
   }
 
   if(payerPays) badges.push(['warn','대납 반영 · 증여가액 ' + shortMoney(giftAmt) + '원']);
