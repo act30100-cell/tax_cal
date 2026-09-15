@@ -1107,6 +1107,9 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <label class="lb" for="sFuneral">④ 장례비용 <span style="font-weight:400;color:var(--ink-3)">500만 ~ 1,000만원</span></label>
         <div class="unit"><input type="text" id="sFuneral" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
         <div class="hint" id="sFuneralK"></div>
+        <label class="lb" for="sOssuary" style="margin-top:10px;font-size:11.5px">봉안시설 · 자연장지 비용 <span style="font-weight:400;color:var(--ink-3)">별도 최대 500만원</span></label>
+        <div class="unit"><input type="text" id="sOssuary" inputmode="numeric" placeholder="0"><span class="won">원</span></div>
+        <div class="hint" id="sOssuaryK"></div>
       </div>
     </div>
   </section>
@@ -1181,7 +1184,6 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <select id="sPriorRel">
             <option value="linealAdult" selected>성년 자녀 — 공제 5,000만원</option>
             <option value="linealMinor">미성년 자녀 — 공제 2,000만원</option>
-            <option value="spouse">배우자 — 공제 6억원</option>
             <option value="skipAdult">손자녀 · 세대생략 — 공제 5,000만원 + 30% 할증</option>
           </select>
         </div>
@@ -1361,6 +1363,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
         <p><b>②</b><span>증여 후 <em>10년을 넘겨</em> 상속</span></p>
         <p><b>③</b><span>증여 후 <em>10년 안에</em> 상속</span></p>
         <p class="uend">보통 ②가 가장 유리하고 ③은 ①과 거의 같아집니다. 그 차이가 사전증여의 실익입니다.</p>
+        <p class="uend" style="margin-top:6px;color:var(--ink-3)">이 화면은 <b>언제</b> 넘길지를 봅니다. 배우자와 자녀에게 <b>얼마씩</b> 나눌지는 상속세 계산기에서 정하세요.</p>
       </div>
     </div>
   </section>
@@ -1383,7 +1386,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       </div>
       <div class="field">
         <label class="chk" style="padding-top:0"><input type="checkbox" id="cSpouse" checked>
-          <span>배우자가 생존해 있음<em>법정상속분대로 상속받는 것으로 계산합니다</em></span></label>
+          <span>배우자가 생존해 있음<em>배우자 몫은 법정상속분으로 놓고 비교합니다. 배우자에게 얼마를 줄지는 상속세 계산기의 '2차 상속까지 보기'에서 정하세요</em></span></label>
       </div>
       <div class="field" style="margin-bottom:0">
         <label class="lb">자녀 수</label>
@@ -1431,7 +1434,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <option value="linealAdult" selected>성년 자녀 — 공제 5,000만원</option>
           <option value="linealMinor">미성년 자녀 — 공제 2,000만원</option>
           <option value="spouse">배우자 — 공제 6억원</option>
+          <option value="grandAdult">성년 손자녀 — 공제 5,000만원 · 30% 할증 · 5년 합산</option>
+          <option value="grandMinor">미성년 손자녀 — 공제 2,000만원 · 30% 할증 · 5년 합산</option>
         </select>
+        <div class="hint" id="cRelK" style="text-align:left"></div>
       </div>
     </div>
   </section>
@@ -3920,7 +3926,7 @@ function gRun(){
 }
 
 /* ================= 상속세 ================= */
-var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid','sPriorSpouse'];
+var S_NUM = ['sAsset','sPrior','sDebt','sFuneral','sSpouseAmt','sFin','sHomeAmt','sPaid','sPriorSpouse','sOssuary'];
 function spouseShare(){ return childCount > 0 ? 1.5 / (1.5 + childCount) : 1; }
 function shareText(){
   if(childCount === 0) return '배우자 단독 · 100%';
@@ -3972,7 +3978,7 @@ function sHints(){
     $('sPaidK').textContent = korean(num($('sPaid')));
   }
   $('sPriorSpWrap').style.display = ($('sSpouse').checked && num($('sPrior')) > 0) ? '' : 'none';
-  ['sAsset','sPrior','sDebt','sFuneral','sFin','sHomeAmt','sPriorSpouse'].forEach(function(id){
+  ['sAsset','sPrior','sDebt','sFuneral','sFin','sHomeAmt','sPriorSpouse','sOssuary'].forEach(function(id){
     $(id+'K').textContent = korean(num($(id)));
   });
   $('sSpouseAmtK').textContent = $('sSpouse').checked
@@ -3991,7 +3997,8 @@ function sRun(){
   var spouseGet = hasSpouse ? num($('sSpouseAmt')) : 0;
   var rows = [], badges = [], notes = [];
 
-  var funeral = funeralIn ? Math.min(Math.max(funeralIn, 5000000), 10000000) : 0;
+  var ossuary = Math.min(num($('sOssuary')), 5000000);
+  var funeral = (funeralIn ? Math.min(Math.max(funeralIn, 5000000), 10000000) : 0) + ossuary;
   var taxable = Math.max(0, asset + prior - debt - funeral);
 
   /* 기초 + 인적공제 vs 일괄공제 */
@@ -4002,7 +4009,7 @@ function sRun(){
   } else if(personal > 500000000){
     lump = personal; lumpLabel = '기초공제 2억원 + 자녀공제 ' + childCount + '명 × 5천만원';
   } else {
-    lump = 500000000; lumpLabel = '일괄공제 (기초 + 인적공제보다 유리)';
+    lump = 500000000; lumpLabel = '일괄공제 5억원 — 기초 · 인적공제 합계보다 유리';
   }
 
   /* 배우자가 미리 받은 증여의 과세표준 — 법정상속분 한도에서 빼야 한다 */
@@ -4099,13 +4106,14 @@ function sRun(){
   rows.push(['①','','총 상속재산가액','상속개시일 시가', won(asset)]);
   if(prior) rows.push(['②','+','사전증여재산','상속인 10년 · 그 외 5년', won(prior)]);
   if(debt)  rows.push(['③','−','채무 · 공과금','', won(debt)]);
-  if(funeral) rows.push(['④','−','장례비용','500만 ~ 1,000만원 한도', won(funeral)]);
+  if(funeral) rows.push(['④','−','장례비용', ossuary ? ('장례비 ' + comma(funeral - ossuary) + '원 + 봉안시설 ' + comma(ossuary) + '원') : '500만 ~ 1,000만원 한도', won(funeral)]);
   rows.push(['','','상속세 과세가액','', won(taxable), 'sum']);
   rows.push(['⑤','−','일괄공제 · 인적공제', lumpLabel, won(lump), '', 'sded']);
   if(hasSpouse) rows.push(['⑥','−','배우자상속공제', spouseLabel, won(spouseDed)]);
   if(finDed)  rows.push(['⑦','−','금융재산 상속공제','순금융재산의 20% · 최대 2억원', won(finDed)]);
   if($('sHome').checked) rows.push(['⑧','−','동거주택 상속공제',
     homeDed ? '최대 6억원' : '주택가액을 입력해야 공제됩니다', won(homeDed), homeDed?'':'muted']);
+  rows.push(['','','상속공제 합계', capHit ? '' : '', won(dedTotal), 'sum']);
   if(capHit) rows.push(['','','공제 종합한도 적용',
     '사전증여 과세표준 ' + comma(Math.round(priorBase)) + '원만큼 한도가 줄었습니다', won(dedTotal), 'muted']);
   rows.push(['','','과세표준','', won(taxBase), 'sum']);
@@ -4126,6 +4134,7 @@ function sRun(){
   if(taxBase === 0) badges.push(['','공제 범위 내 · 납부세액 없음']);
 
   notes.push('<b>신고기한</b> 상속개시일이 속한 달의 말일부터 6개월 이내. 기한 내 신고하면 3%를 공제받습니다.');
+  if(payable > 20000000) notes.push('<b>연부연납</b> 납부세액이 2천만원을 넘으면 최대 10년에 걸쳐 나눠 낼 수 있습니다. 담보를 제공해야 하고 연 3.5%의 가산금이 붙습니다. 현금이 부족하면 부동산 · 유가증권으로 내는 물납도 검토할 수 있습니다.');
   notes.push('배우자상속공제는 <b>실제 상속받은 금액</b>을 기준으로 합니다. 협의분할로 배우자 몫을 늘리면 공제도 커지지만, 다음 상속에서 다시 과세되므로 함께 검토해야 합니다.');
   if(hasSpouse && childCount === 0) notes.push('배우자가 단독으로 상속받는 경우 <b>일괄공제 5억원을 적용할 수 없습니다.</b> 기초공제 2억원과 인적공제만 적용됩니다.');
   if(prior) notes.push('사전증여재산은 상속인은 10년, 상속인이 아닌 자는 5년 이내분을 합산하고, 당시 낸 증여세 산출세액을 <b>증여세액공제</b>로 뺍니다.');
@@ -4741,30 +4750,41 @@ var cChild = 2, cRecv = 1;
 var C_IDS = { out:'cOut', stale:'cStale', badges:'cBadges', foot:'cFoot', pdfbar:'cPdfbar', dateNote:'cDateNote' };
 var C_EMPTY = '<b>재산가액과 증여할 금액을 입력하세요</b>세 가지 경우의 세금을 나란히 놓고<br>얼마나 차이 나는지 보여드립니다.';
 
-function quickGift(amount, relKey){
+function quickGift(amount, relKey, skip){
   var ded = Math.min(GIFT_DED[relKey][0], amount);
   var base = Math.max(0, amount - ded);
   var pr = base > 0 ? gsProgressive(base) : { tax:0, rate:0, ded:0 };
-  var t = pr.tax;
+  /* 세대생략 할증 — 손자녀 30%, 미성년 손자녀가 20억 넘게 받으면 40% */
+  var surRate = skip ? ((relKey === 'linealMinor' && amount > 2000000000) ? 0.40 : 0.30) : 0;
+  var sur = pr.tax * surRate;
+  var t = pr.tax + sur;
   var rc = Math.floor(t * 0.03);
   return { base:base, calc:t, credit:rc, pay:Math.max(0, t - rc), ded:ded,
-           rate:pr.rate, prog:pr.ded };
+           rate:pr.rate, prog:pr.ded, sur:sur, surRate:surRate };
 }
-function quickInherit(estate, hasSpouse, children){
+function quickInherit(estate, hasSpouse, children, priorBase, spouseGet){
   var lump = (hasSpouse && children === 0) ? 200000000
            : Math.max(500000000, 200000000 + children * 50000000);
   var spouseDed = 0;
   if(hasSpouse){
     var share = children > 0 ? 1.5 / (1.5 + children) : 1;
-    spouseDed = Math.max(500000000, Math.min(estate * share, 3000000000));
+    var limit = Math.min(estate * share, 3000000000);
+    if(spouseGet === undefined || spouseGet === null){
+      spouseDed = Math.max(500000000, limit);                      // 법정상속분대로
+    } else {
+      spouseDed = (spouseGet < 500000000) ? 500000000 : Math.min(spouseGet, Math.max(limit, 500000000));
+    }
   }
-  var ded = Math.min(lump + spouseDed, estate);
+  /* 상속공제 종합한도 — 사전증여 과세표준만큼 공제 한도가 줄어든다 (§24) */
+  var dedCap = Math.max(0, estate - (priorBase || 0));
+  var capHit = (lump + spouseDed) > dedCap && (priorBase || 0) > 0;
+  var ded = Math.min(lump + spouseDed, estate, dedCap);
   var base = Math.max(0, estate - ded);
   var pr = base > 0 ? gsProgressive(base) : { tax:0, rate:0, ded:0 };
   var t = pr.tax;
   var rc = Math.floor(t * 0.03);
   return { base:base, calc:t, credit:rc, pay:Math.max(0, t - rc), ded:ded,
-           lump:lump, spouseDed:spouseDed, rate:pr.rate, prog:pr.ded };
+           lump:lump, spouseDed:spouseDed, rate:pr.rate, prog:pr.ded, capHit:capHit, dedCap:dedCap };
 }
 
 function shareTextC(){
@@ -4787,6 +4807,9 @@ function cHints(){
     x.style.opacity = x.disabled ? '.4' : '';
   });
   var g = num($('cGift'));
+  var rv = $('cRel').value;
+  $('cRelK').textContent = (rv === 'grandAdult' || rv === 'grandMinor')
+    ? '상속인이 아니어서 5년만 넘기면 합산되지 않습니다 · 증여세에 30% 할증' : '';
   $('cRecvK').textContent = isSpouse
     ? '배우자는 한 사람이므로 나눌 수 없습니다'
     : ((cRecv > 1 && g) ? ('1인당 ' + comma(Math.floor(g / cRecv)) + '원씩 · 공제도 각자 따로 받습니다') : '');
@@ -4802,7 +4825,20 @@ function cRun(){
 
   var hasSpouse = $('cSpouse').checked;
   var rel = $('cRel').value;
-  var relName = GIFT_DED[rel][1];
+  if(cChild === 0 && rel !== 'spouse'){
+    clearLedger(C_IDS, C_EMPTY);
+    toast('자녀가 없으면 자녀에게 증여할 수 없습니다. 자녀 수를 고르거나 증여 대상을 배우자로 바꾸세요', 3200);
+    return;
+  }
+  if(!hasSpouse && rel === 'spouse'){
+    clearLedger(C_IDS, C_EMPTY);
+    toast('배우자가 없으면 배우자에게 증여할 수 없습니다', 2600);
+    return;
+  }
+  var isGrand = (rel === 'grandAdult' || rel === 'grandMinor');
+  var relKey = rel === 'grandAdult' ? 'linealAdult' : (rel === 'grandMinor' ? 'linealMinor' : rel);
+  var relName = isGrand ? (rel === 'grandAdult' ? '성년 손자녀' : '미성년 손자녀') : GIFT_DED[relKey][1];
+  var YRS = isGrand ? 5 : 10;               // 상속인이 아닌 손자녀는 5년만 합산
 
   /* A. 전부 상속 */
   var A = quickInherit(estate, hasSpouse, cChild);
@@ -4810,15 +4846,16 @@ function cRun(){
   /* B. 증여 후 10년 경과 — 합산되지 않음
      증여세는 받는 사람별로 계산한다. 나눠 주면 공제와 낮은 세율 구간을 각자 쓴다. */
   var per = Math.floor(gift / cRecv);
-  var gU = quickGift(per, rel);
+  var gU = quickGift(per, relKey, isGrand);
   var gB = { ded: gU.ded * cRecv, base: gU.base * cRecv, calc: gU.calc * cRecv,
-             credit: gU.credit * cRecv, pay: gU.pay * cRecv, rate: gU.rate, prog: gU.prog };
+             credit: gU.credit * cRecv, pay: gU.pay * cRecv, rate: gU.rate, prog: gU.prog,
+             sur: gU.sur * cRecv, surRate: gU.surRate };
   var iB = quickInherit(Math.max(0, estate - gift), hasSpouse, cChild);
   var totalB = gB.pay + iB.pay;
 
   /* C. 증여 후 10년 내 상속 — 합산 후 증여세액공제 */
   var gC = gB;
-  var iCfull = quickInherit(estate, hasSpouse, cChild);
+  var iCfull = quickInherit(estate, hasSpouse, cChild, gB.base);   // 사전증여 과세표준만큼 한도 축소
   var share = iCfull.base > 0 ? Math.min(gift / iCfull.base, 1) : 0;
   var creditCap = iCfull.calc * share;
   var credit = Math.min(gC.calc, creditCap);
@@ -4843,13 +4880,14 @@ function cRun(){
   rows.push(['','','① 상속세','', won(A.pay), 'sum']);
 
   /* ── 시나리오 ② ── */
-  rows.push(['②','','증여 후 10년을 넘겨 상속','상속재산에 합산되지 않음', '', 'grp']);
+  rows.push(['②','','증여 후 ' + YRS + '년을 넘겨 상속', isGrand ? '손자녀는 상속인이 아니라 5년만 넘기면 합산되지 않음' : '상속재산에 합산되지 않음', '', 'grp']);
   rows.push(['','','증여재산가액','', won(gift)]);
   if(cRecv > 1) rows.push(['','÷','나눠 줄 사람 ' + cRecv + '명','받는 사람마다 따로 과세됩니다', won(per) + ' / 1인', '', 'csplit']);
   rows.push(['','−','증여재산공제', relName + (cRecv > 1 ? ' · 1인당 ' + comma(gU.ded) + '원' : ''), won(gB.ded), '', 'gded']);
   rows.push(['','','과세표준', cRecv > 1 ? ('1인당 ' + comma(gU.base) + '원') : '', won(gB.base), 'sum']);
   rows.push(['','×','세율', gB.base > 0 ? (pct(gB.rate) + ' · 누진공제 ' + comma(gB.prog) + '원' + (cRecv > 1 ? ' · 1인당 적용' : '')) : '과세표준 없음', '', 'muted', 'gsrate']);
-  rows.push(['','','산출세액', cRecv > 1 ? ('1인당 ' + comma(Math.round(gU.calc)) + '원 × ' + cRecv + '명') : '', won(gB.calc)]);
+  rows.push(['','','산출세액', (cRecv > 1 ? ('1인당 ' + comma(Math.round(gU.calc)) + '원 × ' + cRecv + '명') : '')
+    + (gB.sur ? ((cRecv > 1 ? ' · ' : '') + '세대생략 할증 ' + Math.round(gB.surRate*100) + '% 포함') : ''), won(gB.calc)]);
   rows.push(['','−','신고세액공제','3%', won(gB.credit)]);
   rows.push(['','','증여세','', won(gB.pay), 'sum']);
   rows.push(['','','남은 상속재산','전체 ' + korean(estate) + ' − 증여 ' + korean(gift), won(remain)]);
@@ -4863,10 +4901,10 @@ function cRun(){
   rows.push(['','','② 증여세 + 상속세','', won(totalB), 'sum']);
 
   /* ── 시나리오 ③ ── */
-  rows.push(['③','','증여 후 10년 안에 상속','증여 당시 가액으로 합산', '', 'grp']);
+  rows.push(['③','','증여 후 ' + YRS + '년 안에 상속','증여 당시 가액으로 합산', '', 'grp']);
   rows.push(['','','증여세','② 와 동일' + (cRecv > 1 ? ' · ' + cRecv + '명 합계' : ''), won(gC.pay)]);
   rows.push(['','','상속재산가액','사전증여 ' + korean(gift) + ' 합산', won(estate)]);
-  rows.push(['','−','상속공제 합계','일괄 + 배우자', won(iCfull.ded)]);
+  rows.push(['','−','상속공제 합계', iCfull.capHit ? ('종합한도 적용 · 사전증여 과세표준 ' + shortMoney(gB.base) + '원만큼 축소') : '일괄 + 배우자', won(iCfull.ded)]);
   rows.push(['','','과세표준','', won(iCfull.base), 'sum']);
   rows.push(['','×','세율', iCfull.base > 0 ? (pct(iCfull.rate) + ' · 누진공제 ' + comma(iCfull.prog) + '원') : '과세표준 없음', '', 'muted', 'gsrate']);
   rows.push(['','','산출세액','', won(iCfull.calc)]);
@@ -4875,7 +4913,9 @@ function cRun(){
   rows.push(['','','상속세','', won(iCpay), 'sum']);
   rows.push(['','','③ 증여세 + 상속세','', won(totalC), 'sum']);
 
-  rows.push(['','','① 과 ② 의 차이','10년을 넘겼을 때 줄어드는 세금', won(Math.max(0, save)), 'final']);
+  rows.push(['','','① 과 ② 의 차이',
+    save > 0 ? (YRS + '년을 넘기면 이만큼 줄어듭니다') : (save < 0 ? '사전증여가 오히려 이만큼 불리합니다' : '차이가 없습니다'),
+    won(Math.abs(save)), 'final']);
 
   var vals = [A.pay, totalB, totalC];
   var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
@@ -4887,19 +4927,21 @@ function cRun(){
   var minV = Math.min(A.pay, totalB, totalC);
   var chart = [
     { label:'①', sub:'전부 상속', value:A.pay,  color:'#5B7C8D', best:A.pay === minV },
-    { label:'②', sub:'10년 경과', value:totalB, color:'#1B6B5A', best:totalB === minV },
-    { label:'③', sub:'10년 내',   value:totalC, color:'#C4571F', best:totalC === minV }
+    { label:'②', sub:YRS + '년 경과', value:totalB, color:'#1B6B5A', best:totalB === minV },
+    { label:'③', sub:YRS + '년 내',   value:totalC, color:'#C4571F', best:totalC === minV }
   ];
 
   if(save > 0) badges.push(['', '10년 경과 시 ' + comma(Math.round(save)) + '원 절세']);
   else if(save < 0) badges.push(['warn', '사전증여가 ' + comma(Math.round(-save)) + '원 불리']);
   else badges.push(['grey', '차이 없음']);
-  badges.push(['grey', '재산 ' + korean(estate) + ' · 증여 ' + korean(gift)]);
+  badges.push(['grey', '재산 ' + korean(estate) + ' · 증여 ' + (gift ? korean(gift) : '0원')]);
   if(cRecv > 1) badges.push(['', cRecv + '명에게 분산증여']);
 
   if(cRecv > 1) notes.push('증여세는 <b>받는 사람별로</b> 계산합니다. ' + cRecv + '명에게 나눠 주면 증여재산공제와 낮은 세율 구간을 각자 쓰므로 세금이 크게 줄어듭니다. 다만 각자에게 10년 합산 규정이 따로 적용됩니다.');
   if(rel === 'spouse') notes.push('<b>배우자에게 증여하면 그 재산은 배우자의 것이 됩니다.</b> 나중에 배우자가 사망하면 2차 상속으로 다시 과세되므로, 이 비교만으로 판단하기 어렵습니다. 상속세 계산기의 <b>2차 상속까지 보기</b>로 함께 확인하십시오.');
-  notes.push('<b>10년이 갈림길입니다.</b> 증여 후 10년이 지나면 상속재산에 합산되지 않지만, 10년 안에 상속이 개시되면 증여 당시 가액으로 합산되고 낸 증여세는 한도 내에서만 공제됩니다.');
+  if(isGrand) notes.push('<b>손자녀는 상속인이 아닙니다.</b> 자녀가 살아 있으면 손자녀는 상속인이 아니어서 사전증여 합산 기간이 10년이 아니라 <b>5년</b>입니다. 대신 세대를 건너뛰었으므로 증여세에 <b>30% 할증</b>이 붙습니다. 고령이라 10년을 넘기기 어렵다면 할증을 감수하고 5년 전략을 쓰는 것이 유리할 수 있습니다.');
+  if(isGrand) notes.push('자녀가 먼저 사망해 손자녀가 <b>대습상속인</b>이 된 경우에는 상속인이므로 10년 합산이 적용되고 할증도 없습니다. 이 계산은 자녀가 생존한 경우입니다.');
+  notes.push('<b>' + YRS + '년이 갈림길입니다.</b> 증여 후 ' + YRS + '년이 지나면 상속재산에 합산되지 않지만, ' + YRS + '년 안에 상속이 개시되면 증여 당시 가액으로 합산되고 낸 증여세는 한도 내에서만 공제됩니다.');
   notes.push('<b>가치 상승분은 계산에 없습니다.</b> 합산할 때는 증여 당시 가액을 쓰므로 증여 후 오른 값은 상속세 대상에서 빠집니다. 앞으로 오를 자산일수록 사전증여 실익이 커집니다.');
   notes.push('상속공제는 일괄공제와 배우자상속공제(법정상속분 기준)만 반영했습니다. 금융재산 · 동거주택 공제와 상속공제 종합한도는 넣지 않았습니다.');
   notes.push('증여 대상이 부동산이라면 <b>취득세</b>가 별도로 발생하고, 10년 내 양도 시 <b>이월과세</b>가 적용됩니다. 각 계산기에서 함께 확인하십시오.');
