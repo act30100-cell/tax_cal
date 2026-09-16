@@ -417,6 +417,18 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .empty b{display:block;color:var(--ink-2);font-size:14px;margin-bottom:4px;font-weight:700}
 
 /* footnote */
+.report{padding:16px 16px 4px;border-top:1px solid var(--rule-2);background:#FBFCFA}
+.report .rt{font-size:11.5px;font-weight:800;letter-spacing:.05em;color:var(--pine);margin-bottom:10px}
+.report .rs{margin-bottom:12px}
+.report .rs h5{margin:0 0 4px;font-size:13px;font-weight:800;color:var(--ink)}
+.report .rs p{margin:0;font-size:12.5px;line-height:1.65;color:var(--ink-2)}
+.report .rs.tip{border-left:3px solid var(--pine);padding-left:10px}
+.rtab{width:100%;border-collapse:collapse;margin:8px 0 2px;font-size:11.5px}
+.rtab th,.rtab td{padding:5px 8px;border-bottom:1px solid var(--rule-2);text-align:center}
+.rtab th{background:var(--pine-soft);color:var(--pine);font-weight:800;font-size:11px}
+.rtab td:first-child{text-align:left}
+.rtab tr.hi td{background:#FFF4E9;color:var(--flag);font-weight:800}
+.report .rs.tip h5{color:var(--pine)}
 .foot{padding:13px 16px;background:#FBFCFA;border-top:1px solid var(--rule-2);font-size:11.5px;color:var(--ink-3);line-height:1.65}
 .foot b{color:var(--ink-2)}
 
@@ -777,7 +789,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <div class="field" id="adjBuyWrap">
         <label class="chk"><input type="checkbox" id="adjBuy">
           <span>취득 당시 조정대상지역이었음
-            <em>비과세 요건에 2년 거주가 추가됩니다</em></span></label>
+            <em id="adjBuyHint">비과세 요건에 2년 거주가 추가됩니다</em></span></label>
       </div>
 
       <div class="field" id="adjSaleWrap" style="display:none">
@@ -3137,6 +3149,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="lvTitle">
     <div class="mhd"><h3 id="lvTitle">거주기간을 날짜로 받는 이유</h3><button type="button" data-close aria-label="닫기">✕</button></div>
     <div class="mbd">
+      <h4>거주요건은 언제 붙나</h4>
+      <p><b>2017년 8월 3일 이후</b>에 취득 당시 조정대상지역이던 주택을 취득한 경우에만 2년 거주요건이 붙습니다. 그 전에 취득했으면 조정대상지역이어도 보유 2년만으로 비과세입니다. 기준은 양도일이 아니라 <b>취득일</b>입니다.</p>
+      <div class="callout"><p><b>경과조치가 있습니다.</b> 취득은 8월 3일 이후지만 <b>8월 2일 이전에 매매계약을 맺고 계약금을 지급</b>했으면, 계약 당시 무주택 세대에 한해 거주요건이 면제됩니다. 2017년 봄에 계약하고 가을에 잔금을 치른 경우가 여기 해당합니다. 이 계산기는 취득일로만 판정하므로, 해당한다면 취득 당시 조정대상지역 체크를 풀고 계산하십시오.</p></div>
+
       <h4>지금 양도하는 그 주택 기준입니다</h4>
       <p>이 칸은 <b>지금 팔려는 바로 그 집</b>에 실제로 산 기간입니다. 예전에 살던 집이나 지금 사는 다른 집의 거주기간이 아닙니다. 세대 전체의 거주 이력을 합산하는 것도 아닙니다.</p>
       <p>같은 집이라도 중간에 전세를 주고 나가 살았다면 그 기간은 빠집니다. 들어가 산 구간만 더해서 넣으세요.</p>
@@ -3424,8 +3440,9 @@ function renderLedger(ids, data){
     $(ids.badges).innerHTML = RPT.badges.map(function(b){
       return '<span class="badge '+b[0]+'">'+b[1]+'</span>'; }).join('');
   } else { $(ids.badges).style.display = 'none'; }
+  RPT.report = data.report || null;
   $(ids.foot).style.display = '';
-  $(ids.foot).innerHTML = RPT.notes.map(function(n){ return '· '+n; }).join('<br>');
+  $(ids.foot).innerHTML = reportHTML(RPT.report) + RPT.notes.map(function(n){ return '· '+n; }).join('<br>');
   $(ids.pdfbar).style.display = '';
   $(ids.dateNote).textContent = data.dateNote || '';
 }
@@ -5687,13 +5704,25 @@ function drawReport(stamp){
     if((r.cls || '').indexOf('grp') >= 0) y += 18;
   });
   if(RPT.krw) y += 52;
+  var repLines = [];
+  if(RPT.report && RPT.report.length){
+    y += 90;                                   // 해설 제목 (30 + 60)
+    RPT.report.forEach(function(r){
+      probe.font = '400 21px '+RD;
+      var pl = wrapLines(probe, stripTags(r.p), CW - 24);
+      var th = r.table ? (r.table.rows.length + 1) * 34 + 14 : 0;
+      repLines.push({ h:r.h, lines:pl, tip:!!r.tip, table:r.table });
+      y += 36 + pl.length*32 + th + 22;
+    });
+    y += 10;
+  }
   probe.font = '400 20px '+RD;
   var noteLines = [];
   RPT.notes.forEach(function(n){
     var ls = wrapLines(probe, '· '+stripTags(n), CW);
     noteLines.push(ls); y += ls.length*32;
   });
-  y += 46 + 56;                              // 각주 여백 + 꼬리말
+  y += 46 + 80;                              // 각주 여백 + 꼬리말
   var H = Math.ceil(y);
 
   var cv = document.createElement('canvas');
@@ -5819,6 +5848,53 @@ function drawReport(stamp){
     c.textAlign = 'left';
     yy += rh;
   });
+
+  /* 해설 */
+  if(repLines.length){
+    yy += 30;
+    c.fillStyle = '#F2F6F3'; c.fillRect(PAD, yy - 6, CW, 40);
+    c.fillStyle = '#1B6B5A'; c.font = '800 20px '+RD;
+    c.fillText('해설', PAD + 14, yy + 22);
+    yy += 60;
+    repLines.forEach(function(r){
+      if(r.tip){ c.fillStyle = '#1B6B5A'; c.fillRect(PAD, yy - 4, 4, 30 + r.lines.length*32); }
+      c.fillStyle = r.tip ? '#1B6B5A' : '#12212E'; c.font = '800 22px '+RD;
+      c.fillText(r.h, PAD + (r.tip ? 18 : 0), yy + 20);
+      yy += 36;
+      c.fillStyle = '#41525F'; c.font = '400 21px '+RD;
+      r.lines.forEach(function(line){ c.fillText(line, PAD + (r.tip ? 18 : 0), yy + 18); yy += 32; });
+      if(r.table){
+        var tx = PAD + (r.tip ? 18 : 0), tw = CW - (r.tip ? 18 : 0), n = r.table.cols.length;
+        var cw0 = Math.floor(tw * 0.34), cwx = Math.floor((tw - cw0) / Math.max(1, n - 1));
+        yy += 8;
+        /* 머리글 */
+        c.fillStyle = '#E7F0EC'; c.fillRect(tx, yy, tw, 34);
+        c.fillStyle = '#1B6B5A'; c.font = '800 19px '+RD;
+        r.table.cols.forEach(function(col, i){
+          var cx = i === 0 ? tx + 12 : tx + cw0 + (i-1)*cwx + cwx/2;
+          c.textAlign = i === 0 ? 'left' : 'center';
+          c.fillText(stripTags(col), cx, yy + 23);
+        });
+        yy += 34;
+        r.table.rows.forEach(function(row, ri){
+          var hi = (r.table.hi || []).indexOf(ri) >= 0;
+          if(hi){ c.fillStyle = '#FFF4E9'; c.fillRect(tx, yy, tw, 34); }
+          c.fillStyle = '#DCE2DC'; c.fillRect(tx, yy + 33, tw, 1);
+          c.fillStyle = hi ? '#C4571F' : '#41525F'; c.font = (hi ? '800 ' : '400 ') + '19px '+RD;
+          row.forEach(function(cell, i){
+            var cx = i === 0 ? tx + 12 : tx + cw0 + (i-1)*cwx + cwx/2;
+            c.textAlign = i === 0 ? 'left' : 'center';
+            c.fillText(stripTags(String(cell)), cx, yy + 23);
+          });
+          yy += 34;
+        });
+        c.textAlign = 'left';
+        yy += 6;
+      }
+      yy += 22;
+    });
+    yy += 10;
+  }
 
   /* 각주 */
   yy += 34;
@@ -5965,6 +6041,18 @@ function row(no, op, name, sub, amt, cls, help){
 /* 입력칸 옆 안내만 갱신한다. 계산 결과는 건드리지 않는다. */
 function refreshHints(){
   syncDateSelects();
+  /* 2017.8.3 이전 취득이면 조정대상지역이어도 거주요건이 없다 — 체크박스 설명을 바꿔 혼란을 막는다 */
+  var acqD = pd($('acq').value);
+  var hintEl = $('adjBuyHint');
+  if(hintEl){
+    if(acqD && acqD < new Date(2017, 7, 3)){
+      hintEl.innerHTML = '<b>2017년 8월 3일 이전 취득</b>이라 거주요건이 붙지 않습니다 · 체크해도 세액은 같습니다';
+      hintEl.style.color = 'var(--pine)';
+    } else {
+      hintEl.textContent = '비과세 요건에 2년 거주가 추가됩니다 · 2017년 8월 3일 이후 취득분부터';
+      hintEl.style.color = '';
+    }
+  }
   $('spK').textContent = korean(num($('sp')));
   $('apK').textContent = korean(num($('ap')));
   $('exK').textContent = korean(num($('ex')));
@@ -6059,7 +6147,9 @@ function run(){
   if(oneHouseOK && gain > 0){
     if(sp <= HIGH){
       badges.push(['','1세대 1주택 비과세']);
-      renderExempt(gain, sp, holdY, liveY, badges, acq, sal);
+      renderExempt(gain, sp, holdY, liveY, badges, acq, sal, { asset:asset, isHouse:isHouse, holdY:holdY, liveY:liveY,
+        houseCount:houseCount, effCount:effCount, adjBuy:adjBuy, adjSale:adjSale, needLive:needLive, acq:acq, sal:sal,
+        oneHouseOK:true, exempt:true, apportioned:false, ltBlocked:'', ltRate:0, tempTwo:tempTwo, sang:sang, unreg:false, heavy:false, suspended:suspended });
       return;
     }
     taxableGain = gain * (sp - HIGH) / sp;
@@ -6199,14 +6289,174 @@ function run(){
   if(ap === 0 && gain > 0) notes.push('취득가액을 모르는 경우 매매사례가액 → 감정가액 → <b>환산취득가액</b> 순으로 적용하며, 이때 필요경비는 실액 대신 개산공제(기준시가의 3%)만 인정됩니다. 이 계산기는 환산취득가액을 자동 산정하지 않습니다.');
   notes.push('단순 참고용 계산입니다. 등록임대주택 감면, 조합원입주권 특례, 상속·동거봉양·혼인 합가 특례, 국외자산 양도는 반영하지 않았습니다. 실제 신고 전 세무대리인 검토를 받으십시오.');
   RPT.notes = notes.slice();
+  RPT.report = yangdoReport({ asset:asset, isHouse:isHouse, holdY:holdY, liveY:liveY, houseCount:houseCount, effCount:effCount,
+    adjBuy:adjBuy, adjSale:adjSale, needLive:needLive, acq:acq, sal:sal, oneHouseOK:oneHouseOK, apportioned:apportioned,
+    exempt:false, ltBlocked:ltBlocked, ltRate:ltRate, ltTable:(ltLabel.indexOf('1세대') === 0 ? '1h' : 'gen'),
+    hh:(typeof hh !== 'undefined' ? hh : 0), ll:(typeof ll !== 'undefined' ? ll : 0),
+    heavy:heavy, suspended:suspended, unreg:unreg, tempTwo:tempTwo, sang:sang, rateLabel:rateLabel, base:base });
+  var rh = reportHTML(RPT.report);
   $('foot').style.display = '';
-  $('foot').innerHTML = notes.map(function(n){ return '· '+n; }).join('<br>');
+  $('foot').innerHTML = rh + notes.map(function(n){ return '· '+n; }).join('<br>');
   $('pdfbar').style.display = '';
 }
 
+/* 해설 블록 HTML — 문단과 표 */
+function reportHTML(report){
+  if(!report || !report.length) return '';
+  var h = '<div class="report"><div class="rt">해설</div>';
+  report.forEach(function(r){
+    h += '<div class="rs' + (r.tip ? ' tip' : '') + '"><h5>' + r.h + '</h5><p>' + r.p + '</p>';
+    if(r.table){
+      h += '<table class="rtab"><tr>' + r.table.cols.map(function(c){ return '<th>' + c + '</th>'; }).join('') + '</tr>';
+      r.table.rows.forEach(function(row, i){
+        h += '<tr' + ((r.table.hi || []).indexOf(i) >= 0 ? ' class="hi"' : '') + '>' + row.map(function(c){ return '<td>' + c + '</td>'; }).join('') + '</tr>';
+      });
+      h += '</table>';
+    }
+    h += '</div>';
+  });
+  return h + '</div>';
+}
+
+/* 장기보유특별공제 표1 (일반) — 현재 보유기간 행을 강조 */
+function ltTable1(holdY){
+  var rows = [], hi = [];
+  for(var y = 3; y <= 15; y++){
+    rows.push([(y === 15 ? '15년 이상' : y + '년 이상'), Math.round(ltcgGeneral(y)*100) + '%']);
+    if((holdY >= 15 && y === 15) || holdY === y) hi.push(rows.length - 1);
+  }
+  return { cols:['보유기간','공제율'], rows:rows, hi:hi };
+}
+/* 장기보유특별공제 표2 (1세대 1주택) — 보유 · 거주 각 행 강조 */
+function ltTable2(holdY, liveY){
+  var rows = [], hi = [];
+  for(var y = 2; y <= 10; y++){
+    var hv = y < 3 ? '—' : Math.round(ltcgHold1H(y)*100) + '%';
+    rows.push([(y === 10 ? '10년 이상' : y + '년 이상'), hv, Math.round(ltcgLive1H(y)*100) + '%']);
+    var idx = rows.length - 1;
+    var hy = Math.min(holdY, 10), ly = Math.min(liveY, 10);
+    if(hy === y || ly === y) hi.push(idx);
+  }
+  return { cols:['기간','보유 공제','거주 공제'], rows:rows, hi:hi };
+}
+/* 기본세율표 — 적용 구간 강조 */
+function rateTable(base, surcharge){
+  var rows = [], hi = [];
+  var names = ['1,400만원 이하','5,000만원 이하','8,800만원 이하','1억 5,000만원 이하','3억원 이하','5억원 이하','10억원 이하','10억원 초과'];
+  BRACKETS.forEach(function(b, i){
+    var r = Math.round((b[1] + (surcharge||0)) * 100);
+    rows.push([names[i], r + '%', b[2] ? comma(b[2]) + '원' : '—']);
+    if(base > 0 && base <= b[0] && hi.length === 0) hi.push(i);
+  });
+  return { cols:['과세표준', surcharge ? '세율 (+' + Math.round(surcharge*100) + '%p)' : '세율', '누진공제'], rows:rows, hi:hi };
+}
+
+/* ── 양도소득세 해설 — 판정 근거와 절세 포인트를 문장으로 ── */
+function yangdoReport(o){
+  var R = [];
+  var fmtD = function(d){ return d.getFullYear() + '년 ' + (d.getMonth()+1) + '월'; };
+  var assetName = { house:'주택', presale:'분양권', land:'토지 · 건물', nonbiz:'비사업용토지' }[o.asset] || '자산';
+
+  /* 1. 사례 요약 */
+  var sum = fmtD(o.acq) + ' 취득 → ' + fmtD(o.sal) + ' 양도. ' + assetName + '을 만 ' + o.holdY + '년 보유';
+  if(o.isHouse){
+    sum += (o.liveY ? '하고 ' + o.liveY + '년 거주' : '했고 거주하지 않음') + '. ';
+    sum += (o.tempTwo ? '일시적 2주택으로 1주택 판정' : (o.effCount === 1 ? '1세대 1주택' : o.houseCount + '주택'));
+    if(o.adjBuy) sum += ' · 취득 당시 조정대상지역';
+    if(o.adjSale && o.effCount >= 2) sum += ' · 양도 당시 조정대상지역';
+  }
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 비과세 판정 */
+  if(o.exempt){
+    var why = '보유 2년 이상';
+    if(o.needLive) why += '이고 2017년 8월 3일 이후 조정대상지역에서 취득했으므로 필요한 2년 거주도 채웠습니다';
+    else if(o.adjBuy && o.acq < new Date(2017,7,3)) why += '입니다. 2017년 8월 3일 이전 취득이라 조정대상지역이어도 거주요건이 없습니다';
+    else if(o.sang) why += '이고 상생임대주택 특례로 거주요건이 면제됩니다';
+    else why += '이고 취득 당시 비조정지역이라 거주요건이 없습니다';
+    R.push({ h:'비과세 판정 — 충족', p:'1세대 1주택 비과세 요건을 갖췄습니다. ' + why + '. 양도가액이 12억원 이하라 전액 비과세입니다.' });
+  } else if(o.apportioned){
+    R.push({ h:'비과세 판정 — 12억 초과분만 과세', p:'1세대 1주택 비과세 요건은 갖췄지만 양도가액이 12억원을 넘습니다. 양도차익 중 (양도가액 − 12억원) ÷ 양도가액 비율만큼만 과세됩니다. 12억원까지의 몫은 비과세입니다.' });
+  } else if(o.isHouse && o.effCount === 1 && !o.unreg){
+    if(o.holdY < 2) R.push({ h:'비과세 판정 — 불충족', p:'1세대 1주택이지만 보유기간이 2년에 미달합니다. 비과세는 보유 2년이 최소 요건입니다.' });
+    else if(o.needLive && o.liveY < 2) R.push({ h:'비과세 판정 — 불충족', p:'2017년 8월 3일 이후 조정대상지역에서 취득한 주택은 보유 2년에 더해 <b>2년 거주</b>가 필수입니다. 거주기간이 ' + o.liveY + '년이라 비과세를 받지 못했습니다.' + (o.acq < new Date(2018,0,1) ? ' 다만 2017년 8월 2일 이전에 매매계약을 맺고 계약금을 지급한 무주택 세대였다면 경과조치로 거주요건이 면제되니 계약일을 확인하십시오.' : '') });
+  } else if(o.isHouse && o.effCount >= 2){
+    R.push({ h:'비과세 판정 — 해당 없음', p:'양도 시점에 ' + o.houseCount + '주택이라 1세대 1주택 비과세 대상이 아닙니다.' + (o.heavy ? ' 조정대상지역 주택이라 중과세율까지 적용됩니다.' : (o.suspended ? ' 다만 중과 한시 배제 기간의 양도라 중과는 적용되지 않았습니다.' : ' 비조정지역이라 중과는 없습니다.')) });
+  } else if(o.unreg){
+    R.push({ h:'미등기 양도', p:'등기하지 않고 양도한 자산은 비과세 · 장기보유특별공제 · 기본공제가 모두 배제되고 70% 단일세율이 적용됩니다.' });
+  } else if(!o.isHouse){
+    R.push({ h:'비과세 판정 — 해당 없음', p:assetName + '은 1세대 1주택 비과세 대상이 아닙니다.' + (o.asset === 'nonbiz' ? ' 비사업용토지는 기본세율에 10%p가 더해집니다.' : '') });
+  }
+
+  /* 3. 장기보유특별공제 */
+  if(o.exempt){
+    /* 전액 비과세면 공제 설명 불필요 */
+  } else if(o.ltBlocked){
+    var bwhy = { '보유 3년 미만':'보유기간이 3년에 미달해', '분양권':'분양권은', '미등기 자산':'미등기 자산은', '조정대상지역 다주택 중과':'조정대상지역 다주택 중과 대상은' }[o.ltBlocked] || o.ltBlocked;
+    R.push({ h:'장기보유특별공제 — 배제', p:bwhy + ' 장기보유특별공제를 받지 못합니다.' });
+  } else if(o.ltTable === '1h'){
+    R.push({ h:'장기보유특별공제 — 1세대 1주택 표', p:'보유기간과 거주기간을 각각 연 4%씩 인정하는 표가 적용됐습니다. 보유 ' + o.holdY + '년 ' + Math.round(o.hh*100) + '%에 거주 ' + o.liveY + '년 ' + Math.round(o.ll*100) + '%를 더해 ' + Math.round(o.ltRate*100) + '%입니다. 최대 80%까지 가능합니다.',
+      table: ltTable2(o.holdY, o.liveY) });
+  } else if(o.ltRate > 0){
+    R.push({ h:'장기보유특별공제 — 일반 표', p:'보유 3년부터 연 2%씩 인정하는 일반 표가 적용됐습니다. 보유 ' + o.holdY + '년이라 ' + Math.round(o.ltRate*100) + '%입니다. 15년 이상은 30%가 상한입니다.' + (o.isHouse && o.effCount === 1 && o.liveY < 2 && !o.sang ? ' 거주 2년을 채우면 보유와 거주를 각각 인정하는 1세대 1주택 표로 바뀝니다.' : ''),
+      table: ltTable1(o.holdY) });
+  }
+
+  /* 4. 세율 */
+  if(!o.exempt && o.rateLabel){
+    var rp = '', rtab = null;
+    if(o.rateLabel.indexOf('단기') >= 0){
+      rp = '보유기간이 2년 미만이라 소득 구간과 무관한 단기 단일세율이 적용됐습니다.';
+      rtab = o.isHouse
+        ? { cols:['보유기간','주택 · 입주권'], rows:[['1년 미만','70%'],['2년 미만','60%'],['2년 이상','기본세율']], hi:[o.holdY < 1 ? 0 : 1] }
+        : { cols:['보유기간','주택 외 자산'], rows:[['1년 미만','50%'],['2년 미만','40%'],['2년 이상','기본세율']], hi:[o.holdY < 1 ? 0 : 1] };
+    } else if(o.rateLabel.indexOf('중과') >= 0 || o.rateLabel.indexOf('%p') >= 0){
+      var sc = o.effCount >= 3 ? 0.30 : (o.asset === 'nonbiz' ? 0.10 : 0.20);
+      rp = '기본세율에 ' + Math.round(sc*100) + '%p를 더한 중과세율입니다. 표의 세율은 가산 후 세율이며 누진공제는 기본세율표와 같습니다.';
+      rtab = rateTable(o.base, sc);
+    } else if(o.rateLabel.indexOf('분양권') >= 0){
+      rp = '분양권은 보유기간에 따른 단일세율입니다.';
+      rtab = { cols:['보유기간','세율'], rows:[['1년 미만','70%'],['1년 이상','60%']], hi:[o.holdY < 1 ? 0 : 1] };
+    } else if(o.rateLabel.indexOf('미등기') >= 0){
+      rp = '미등기 양도자산은 70% 단일세율입니다.';
+    } else {
+      rp = '과세표준 구간에 따른 기본세율이 적용됐습니다. 구간을 넘어가는 부분에만 높은 세율이 붙고 누진공제가 그 조정을 대신합니다.';
+      rtab = rateTable(o.base, 0);
+    }
+    R.push({ h:'세율', p:rp, table:rtab });
+  }
+
+  /* 5. 절세 포인트 */
+  var tips = [];
+  if(o.isHouse && o.effCount === 1 && !o.unreg && !o.exempt){
+    if(o.holdY < 2) tips.push('보유 2년을 채운 뒤 양도하면 비과세 요건이 갖춰지고 단기세율에서도 벗어납니다.');
+    else if(o.needLive && o.liveY < 2) tips.push('이 주택에 2년을 실제로 거주한 뒤 양도하면 비과세 대상이 됩니다. 양도가액 12억원 이하면 세금이 없어지고, 초과하더라도 초과분만 과세됩니다. 거주기간이 늘면 장기보유특별공제도 1세대 1주택 표로 바뀌어 최대 80%까지 올라갑니다.');
+    else if(o.apportioned && o.liveY < 2 && !o.sang) tips.push('거주 2년을 채우면 장기보유특별공제가 일반 표에서 1세대 1주택 표로 바뀝니다. 12억 초과분에 대한 공제율이 크게 올라갑니다.');
+  }
+  if(o.isHouse && o.effCount >= 2 && o.heavy){
+    tips.push('중과를 피하려면 처분 순서를 살펴보십시오. 비조정지역 주택이나 양도차익이 작은 주택을 먼저 팔아 1주택이 된 뒤 이 주택을 양도하면 중과 없이 기본세율과 장기보유특별공제를 받습니다. 종전 주택 처분 기한 안이라면 일시적 2주택으로 1주택 판정을 받을 수도 있습니다.');
+  }
+  if(!o.unreg && !o.exempt && o.holdY < 3 && o.holdY >= 2 && !o.heavy && o.asset !== 'presale'){
+    tips.push('보유 3년을 채우면 장기보유특별공제 6%가 시작됩니다. 이후 매년 2%씩 늘어납니다.');
+  }
+  if(o.holdY < 1 && o.isHouse && !o.unreg && o.asset !== 'presale'){
+    tips.push('1년만 더 보유해도 세율이 70%에서 60%로, 2년을 채우면 기본세율로 내려갑니다.');
+  }
+  if(o.asset === 'presale'){
+    tips.push('분양권은 보유기간과 무관하게 60~70% 단일세율입니다. 완공 후 등기하여 주택으로 양도하면 주택 세율과 장기보유특별공제, 비과세 판정을 받을 수 있습니다.');
+  }
+  if(o.unreg){
+    tips.push('등기를 마친 뒤 양도하면 70% 단일세율 대신 기본세율이 적용되고 각종 공제도 살아납니다.');
+  }
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+
+  return R;
+}
+
 /* 비과세 전용 렌더 */
-function renderExempt(gain, sp, holdY, liveY, badges, acq, sal){
+function renderExempt(gain, sp, holdY, liveY, badges, acq, sal, ctx){
   RPT = { rows:[], badges:[], notes:[], krw:'0원', title:'부동산 양도소득세 계산 결과', slug:'yangdo-tax' };
+  RPT.report = ctx ? yangdoReport(ctx) : [];
   var h = '';
   h += row('①','','양도가액','실지거래가액', won(sp), '');
   h += row('②','−','취득가액','', won(num($('ap'))), '');
@@ -6228,8 +6478,9 @@ function renderExempt(gain, sp, holdY, liveY, badges, acq, sal){
     '비과세라도 <b>신고는 필요할 수 있습니다.</b> 예정신고 기한은 '+fmt(due)+'입니다.',
     '단순 참고용 계산입니다. 실제 신고 전 세무대리인 검토를 받으십시오.'
   ];
+  var rh = reportHTML(RPT.report);
   $('foot').style.display = '';
-  $('foot').innerHTML = RPT.notes.map(function(n){ return '· '+n; }).join('<br>');
+  $('foot').innerHTML = rh + RPT.notes.map(function(n){ return '· '+n; }).join('<br>');
   $('pdfbar').style.display = '';
 }
 
