@@ -5197,7 +5197,10 @@ function jRun(){
   }
   notes.push('단순 참고용 계산입니다. 합산배제 임대주택 · 사원용주택, 법인 보유분, 주택 외 토지분은 반영하지 않았습니다.');
 
-  renderLedger(J_IDS, { rows:rows, badges:badges, notes:notes,
+  var report = jongbuReport({ price:price, houses:houses, jCount:jCount, single:single, joint:$('jJoint').checked, share:share,
+    city:$('jCity').checked, pFair:pFair, useSpecial:useSpecial, propBase:propBase, propRate:propInfo.rate,
+    jongPrice:jongPrice, over:over, taxBase:taxBase, propCredit:propCredit, creditRate:creditRate, jAge:jAge, jHold:jHold });
+  renderLedger(J_IDS, { rows:rows, badges:badges, notes:notes, report:report,
     krw: korean(total) || '0원', title:'보유세 계산 결과', slug:'holding-tax' });
 }
 
@@ -5689,7 +5692,8 @@ function wrapLines(ctx, text, maxW){
 var RD = "'NanumSquareRound','Nanum Square Round','Apple SD Gothic Neo',sans-serif";
 var JU = "'Jua','NanumSquareRound',sans-serif";
 
-function drawReport(stamp){
+function drawReport(stamp, withReport){
+  if(withReport === undefined) withReport = true;
   var W = 1240, PAD = 64, CW = W - PAD*2;
   var probe = document.createElement('canvas').getContext('2d');
 
@@ -5705,7 +5709,7 @@ function drawReport(stamp){
   });
   if(RPT.krw) y += 52;
   var repLines = [];
-  if(RPT.report && RPT.report.length){
+  if(withReport && RPT.report && RPT.report.length){
     y += 90;                                   // 해설 제목 (30 + 60)
     RPT.report.forEach(function(r){
       probe.font = '400 21px '+RD;
@@ -5856,7 +5860,25 @@ function drawReport(stamp){
     c.fillStyle = '#1B6B5A'; c.font = '800 20px '+RD;
     c.fillText('해설', PAD + 14, yy + 22);
     yy += 60;
-    repLines.forEach(function(r){
+    repLines.forEach(function(r){ yy = drawReportSection(c, r, PAD, CW, yy); });
+    yy += 10;
+  }
+
+  /* 각주 */
+  yy += 34;
+  c.fillStyle = '#78868F'; c.font = '400 20px '+RD;
+  noteLines.forEach(function(ls){
+    ls.forEach(function(line){ c.fillText(line, PAD, yy); yy += 32; });
+  });
+
+  /* 꼬리말 */
+  drawFooter(c, W, H, PAD, CW);
+  return cv;
+}
+
+/* 해설 한 항목을 그리고 다음 y 를 돌려준다 */
+function drawReportSection(c, r, PAD, CW, yy){
+      if(r.tip){ c.fillStyle = '#1B6B5A'; c.fillRect(PAD, yy - 4, 4, 30 + r.lines.length*32); }
       if(r.tip){ c.fillStyle = '#1B6B5A'; c.fillRect(PAD, yy - 4, 4, 30 + r.lines.length*32); }
       c.fillStyle = r.tip ? '#1B6B5A' : '#12212E'; c.font = '800 22px '+RD;
       c.fillText(r.h, PAD + (r.tip ? 18 : 0), yy + 20);
@@ -5892,34 +5914,55 @@ function drawReport(stamp){
         yy += 6;
       }
       yy += 22;
-    });
-    yy += 10;
-  }
-
-  /* 각주 */
-  yy += 34;
-  c.fillStyle = '#78868F'; c.font = '400 20px '+RD;
-  noteLines.forEach(function(ls){
-    ls.forEach(function(line){ c.fillText(line, PAD, yy); yy += 32; });
-  });
-
-  /* 꼬리말 */
-  yy = H - 30;
+      return yy;
+}
+function sectionHeight(r){
+  return 36 + r.lines.length*32 + (r.table ? (r.table.rows.length + 1) * 34 + 14 : 0) + 22;
+}
+function drawFooter(c, W, H, PAD, CW, pageNo){
+  var yy = H - 30;
   c.fillStyle = '#DCE2DC'; c.fillRect(PAD, yy - 24, CW, 1);
   c.textAlign = 'center'; c.fillStyle = '#AAB4B8'; c.font = '400 18px '+RD;
   c.fillText('본 계산서는 참고용입니다. 실제 신고 전 세무대리인의 검토를 받으시기 바랍니다.', W/2, yy);
+  if(pageNo){ c.textAlign = 'right'; c.fillText(pageNo, PAD + CW, yy); }
   c.textAlign = 'left';
+}
 
-  return cv;
+/* 해설을 A4 비율 쪽으로 나눠 그린다 — 항목이 쪽에 안 들어가면 다음 쪽으로 */
+function drawReportPages(stamp, startPage){
+  if(!RPT.report || !RPT.report.length) return [];
+  var W = 1240, H = 1754, PAD = 64, CW = W - PAD*2, TOP = 120, BOTTOM = 80;
+  var probe = document.createElement('canvas').getContext('2d');
+  probe.font = '400 21px '+RD;
+  var items = RPT.report.map(function(r){
+    return { h:r.h, lines:wrapLines(probe, stripTags(r.p), CW - 24), tip:!!r.tip, table:r.table };
+  });
+  var pages = [], cur = null, c = null, yy = 0, pageNo = startPage || 2;
+  function newPage(){
+    cur = document.createElement('canvas'); cur.width = W; cur.height = H;
+    c = cur.getContext('2d'); c.textBaseline = 'alphabetic';
+    c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#1B6B5A'; c.fillRect(0, 0, W, 10);
+    c.fillStyle = '#1B6B5A'; c.font = '800 19px '+RD; c.fillText('세금 계산서 · 해설', PAD, 56);
+    c.fillStyle = '#12212E'; c.font = '400 30px '+JU; c.fillText(RPT.title || '', PAD, 96);
+    c.fillStyle = '#DCE2DC'; c.fillRect(PAD, 112, CW, 2);
+    yy = TOP + 20;
+    pages.push(cur);
+  }
+  newPage();
+  items.forEach(function(r){
+    var need = sectionHeight(r);
+    if(yy + need > H - BOTTOM && yy > TOP + 20){ drawFooter(c, W, H, PAD, CW, String(pageNo++)); newPage(); }
+    yy = drawReportSection(c, r, PAD, CW, yy);
+  });
+  drawFooter(c, W, H, PAD, CW, String(pageNo));
+  return pages;
 }
 
 /* JPEG 한 장을 담은 최소 PDF를 직접 조립 */
-function buildPDF(jpeg, iw, ih){
+function buildPDF(pagesIn){
+  /* pagesIn : [{jpeg, w, h}, ...] — 쪽마다 이미지 한 장 */
   var PW = 595.28, PH = 841.89, M = 28;
-  var w = PW - M*2, h = w * ih / iw;
-  if(h > PH - M*2){ h = PH - M*2; w = h * iw / ih; }
-  var x = (PW - w)/2, yBase = PH - M - h;
-
   var parts = [], total = 0, off = {};
   function raw(u8){ parts.push(u8); total += u8.length; }
   function str(t){
@@ -5929,24 +5972,39 @@ function buildPDF(jpeg, iw, ih){
   }
   var f = function(n){ return Math.round(n*100)/100; };
 
+  var n = pagesIn.length;
+  /* 객체 번호 : 1 카탈로그, 2 Pages, 그 뒤 쪽마다 [Page, Image, Contents] 세 개 */
+  var kids = [];
+  for(var k = 0; k < n; k++) kids.push((3 + k*3) + ' 0 R');
+
   str('%PDF-1.4\n');
   off[1] = total; str('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-  off[2] = total; str('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
-  off[3] = total; str('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+f(PW)+' '+f(PH)+']'
-    + ' /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n');
-  off[4] = total;
-  str('4 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih
-    + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpeg.length+' >>\nstream\n');
-  raw(jpeg);
-  str('\nendstream\nendobj\n');
-  var content = 'q '+f(w)+' 0 0 '+f(h)+' '+f(x)+' '+f(yBase)+' cm /Im0 Do Q\n';
-  off[5] = total;
-  str('5 0 obj\n<< /Length '+content.length+' >>\nstream\n'+content+'endstream\nendobj\n');
+  off[2] = total; str('2 0 obj\n<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>\nendobj\n');
 
+  pagesIn.forEach(function(pg, k){
+    var iw = pg.w, ih = pg.h, jpeg = pg.jpeg;
+    var w = PW - M*2, h = w * ih / iw;
+    if(h > PH - M*2){ h = PH - M*2; w = h * iw / ih; }
+    var x = (PW - w)/2, yBase = PH - M - h;
+    var oP = 3 + k*3, oI = oP + 1, oC = oP + 2;
+    off[oP] = total;
+    str(oP + ' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+f(PW)+' '+f(PH)+']'
+      + ' /Resources << /XObject << /Im0 ' + oI + ' 0 R >> >> /Contents ' + oC + ' 0 R >>\nendobj\n');
+    off[oI] = total;
+    str(oI + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih
+      + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpeg.length+' >>\nstream\n');
+    raw(jpeg);
+    str('\nendstream\nendobj\n');
+    var content = 'q '+f(w)+' 0 0 '+f(h)+' '+f(x)+' '+f(yBase)+' cm /Im0 Do Q\n';
+    off[oC] = total;
+    str(oC + ' 0 obj\n<< /Length '+content.length+' >>\nstream\n'+content+'endstream\nendobj\n');
+  });
+
+  var last = 2 + n*3;
   var xrefPos = total;
-  var x2 = 'xref\n0 6\n0000000000 65535 f \n';
-  for(var i=1;i<=5;i++) x2 += ('0000000000'+off[i]).slice(-10)+' 00000 n \n';
-  x2 += 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+xrefPos+'\n%%EOF\n';
+  var x2 = 'xref\n0 ' + (last + 1) + '\n0000000000 65535 f \n';
+  for(var i=1;i<=last;i++) x2 += ('0000000000'+off[i]).slice(-10)+' 00000 n \n';
+  x2 += 'trailer\n<< /Size ' + (last + 1) + ' /Root 1 0 R >>\nstartxref\n'+xrefPos+'\n%%EOF\n';
   str(x2);
 
   var out = new Uint8Array(total), p = 0;
@@ -5995,16 +6053,29 @@ function saveAs(kind, btnEl){
       var now = new Date();
       var stamp = now.getFullYear()+'.'+('0'+(now.getMonth()+1)).slice(-2)+'.'+('0'+now.getDate()).slice(-2);
       var name  = (RPT.slug || 'tax') + '-' + stamp.replace(/\./g,'');
-      var cv = drawReport(stamp);
-
       if(isPdf){
-        var jpeg = dataURLtoBytes(cv.toDataURL('image/jpeg', 0.9));
-        var bytes = buildPDF(jpeg, cv.width, cv.height);
+        /* 1쪽 계산 내역, 2쪽부터 해설 */
+        var p1 = drawReport(stamp, false);
+        var pages = [{ jpeg:dataURLtoBytes(p1.toDataURL('image/jpeg', 0.9)), w:p1.width, h:p1.height }];
+        drawReportPages(stamp, 2).forEach(function(pc){
+          pages.push({ jpeg:dataURLtoBytes(pc.toDataURL('image/jpeg', 0.9)), w:pc.width, h:pc.height });
+        });
+        var bytes = buildPDF(pages);
         download('data:application/pdf;base64,' + bytesToBase64(bytes), name + '.pdf');
-        toast('PDF를 저장했습니다');
+        toast('PDF를 저장했습니다' + (pages.length > 1 ? ' · ' + pages.length + '쪽' : ''));
       } else {
-        download(cv.toDataURL('image/png'), name + '.png');
-        toast('이미지를 저장했습니다');
+        /* 이미지도 PDF 와 같은 쪽 나눔 — 1쪽 계산 내역, 2쪽부터 해설 */
+        var imgs = [drawReport(stamp, false)].concat(drawReportPages(stamp, 2));
+        if(imgs.length === 1){
+          download(imgs[0].toDataURL('image/png'), name + '.png');
+          toast('이미지를 저장했습니다');
+        } else {
+          /* 브라우저가 연속 내려받기를 막지 않도록 조금씩 간격을 둔다 */
+          imgs.forEach(function(pc, i){
+            setTimeout(function(){ download(pc.toDataURL('image/png'), name + '-' + (i+1) + '.png'); }, i * 450);
+          });
+          toast('이미지 ' + imgs.length + '장을 저장했습니다 · 파일명 끝에 쪽 번호가 붙습니다', 3600);
+        }
       }
     } catch(err){
       toast('저장하지 못했습니다: ' + (err && err.message ? err.message : '알 수 없는 오류'), 4500);
@@ -6349,6 +6420,93 @@ function rateTable(base, surcharge){
     if(base > 0 && base <= b[0] && hi.length === 0) hi.push(i);
   });
   return { cols:['과세표준', surcharge ? '세율 (+' + Math.round(surcharge*100) + '%p)' : '세율', '누진공제'], rows:rows, hi:hi };
+}
+
+/* ── 보유세 해설 ── */
+function jongbuReport(o){
+  var R = [];
+  var pct = function(x, d){ var m = Math.pow(10, d||2); return Math.round(x*100*m)/m + '%'; };
+
+  /* 1. 사례 요약 */
+  var sum = '공시가격 ' + shortMoney(o.price) + '원';
+  if(o.houses.length > 1) sum += ' (' + o.houses.length + '채 합계)';
+  sum += ' · ' + (o.jCount >= 3 ? '3주택 이상' : o.jCount + '주택');
+  if(o.single) sum += ' · 1세대 1주택으로 계산';
+  if(o.joint) sum += ' · 공동명의 지분 ' + Math.round(o.share*100) + '%';
+  if(o.city) sum += ' · 도시지역';
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 재산세 */
+  var pf = '재산세 과세표준은 공시가격에 공정시장가액비율 ' + Math.round(o.pFair*100) + '%를 곱한 금액입니다. ';
+  if(o.single) pf += '1세대 1주택 특례로 60%가 아니라 ' + Math.round(o.pFair*100) + '%가 적용됐습니다(3억 이하 43% · 6억 이하 44% · 6억 초과 45%). ';
+  else pf += '1세대 1주택이 아니라 일반 비율 60%입니다. ';
+  if(o.useSpecial) pf += '공시가격 9억원 이하 1세대 1주택이라 세율도 0.05~0.35%의 <b>특례세율</b>이 적용됐습니다. ';
+  else pf += '세율은 0.1~0.4%의 표준세율입니다. ';
+  if(o.houses.length > 1) pf += '주택이 여러 채라 지방세법 제113조에 따라 <b>주택마다 따로</b> 세액을 산정해 합쳤습니다. ';
+  if(o.joint) pf += '공동명의는 주택 전체로 계산한 세액을 지분 ' + Math.round(o.share*100) + '%로 나눴습니다. ';
+  var ptab = (o.useSpecial ? PROP_BR_1H : PROP_BR).map(function(b, i){
+    var lo = ['6천만원 이하','1억 5천만원 이하','3억원 이하','3억원 초과'][i];
+    return [lo, pct(b[1], 2), b[2] ? comma(b[2]) + '원' : '—'];
+  });
+  var phi = []; (o.useSpecial ? PROP_BR_1H : PROP_BR).forEach(function(b, i){ if(o.propBase <= b[0] && phi.length === 0) phi.push(i); });
+  R.push({ h:'재산세 — ' + (o.useSpecial ? '1세대 1주택 특례세율' : '표준세율'), p:pf,
+    table:{ cols:['과세표준','세율','누진공제'], rows:ptab, hi:phi } });
+
+  /* 3. 종부세 과세 여부 */
+  var basicTxt = o.single ? '12억원' : '9억원';
+  if(o.over <= 0){
+    R.push({ h:'종합부동산세 — 대상 아님', p:'종부세 기준 공시가격 ' + shortMoney(o.jongPrice) + '원이 기본공제 ' + basicTxt + '을 넘지 않아 종합부동산세가 없습니다. 재산세만 부담합니다.' });
+  } else {
+    var jp = '종부세 기준 공시가격 ' + shortMoney(o.jongPrice) + '원에서 기본공제 ' + basicTxt + '을 빼고, 공정시장가액비율 60%를 곱한 ' + shortMoney(o.taxBase) + '원이 과세표준입니다. ';
+    if(o.joint && o.single) jp += '부부 공동명의 1주택 특례를 신청한 것으로 보아 지분 전체를 기준으로 12억원을 공제했습니다. ';
+    else if(o.joint) jp += '특례를 신청하지 않아 본인 지분만 과세하고 9억원을 공제했습니다. ';
+    var jtab = (o.jCount >= 3 ? JONG_BR_HIGH : JONG_BR_LOW).map(function(b, i){
+      var lo = ['3억원 이하','6억원 이하','12억원 이하','25억원 이하','50억원 이하','94억원 이하','94억원 초과'][i];
+      return [lo, pct(b[1], 1), b[2] ? comma(b[2]) + '원' : '—'];
+    });
+    var jhi = []; (o.jCount >= 3 ? JONG_BR_HIGH : JONG_BR_LOW).forEach(function(b, i){ if(o.taxBase <= b[0] && jhi.length === 0) jhi.push(i); });
+    jp += (o.jCount >= 3 ? '3주택 이상이라 과세표준 12억원을 넘는 구간부터 중과세율이 적용됩니다.' : '2주택 이하 세율표가 적용됐습니다.');
+    R.push({ h:'종합부동산세 — ' + (o.jCount >= 3 ? '3주택 이상 세율' : '2주택 이하 세율'), p:jp,
+      table:{ cols:['과세표준','세율','누진공제'], rows:jtab, hi:jhi } });
+
+    /* 4. 재산세 중복분 */
+    R.push({ h:'재산세 중복분 공제', p:'같은 주택에 재산세가 이미 부과되므로 겹치는 몫을 종부세에서 빼줍니다. 종부세법 시행령 제4조의2 산식대로 <b>과세기준 초과금액 × 60% × 재산세 공정시장가액비율 ' + Math.round(o.pFair*100) + '% × 재산세율 ' + pct(o.propRate, 2) + '</b>로 계산해 ' + comma(Math.round(o.propCredit)) + '원을 뺐습니다.' + (o.houses.length > 1 ? ' 주택이 여러 채라 실제 부과된 재산세 비율로 안분했습니다.' : '') });
+
+    /* 5. 세액공제 */
+    if(o.single){
+      var ct = { cols:['연령','공제','보유기간','공제'], rows:[['60세 이상','20%','5년 이상','20%'],['65세 이상','30%','10년 이상','40%'],['70세 이상','40%','15년 이상','50%']], hi:[] };
+      var ai = { 20:0, 30:1, 40:2 }[o.jAge], hi2 = { 20:0, 40:1, 50:2 }[o.jHold];
+      if(ai !== undefined) ct.hi.push(ai);
+      if(hi2 !== undefined && ct.hi.indexOf(hi2) < 0) ct.hi.push(hi2);
+      var cp = o.creditRate > 0
+        ? ('연령 ' + o.jAge + '%와 보유 ' + o.jHold + '%를 더해 ' + Math.round(o.creditRate*100) + '%를 공제했습니다.' + ((o.jAge + o.jHold) > 80 ? ' 합계가 80%를 넘어 상한 80%까지만 적용됐습니다.' : '') + ' 6월 1일 현재 만 나이와 날짜로 꽉 채운 보유기간으로 판정합니다.')
+        : '60세 미만이고 보유 5년 미만이라 연령 · 보유 세액공제가 없습니다. 1세대 1주택 단독명의(또는 부부 특례)에만 적용되는 공제입니다.';
+      R.push({ h:'연령 · 보유 세액공제', p:cp, table:ct });
+    } else {
+      R.push({ h:'연령 · 보유 세액공제 — 해당 없음', p:'연령 · 보유 세액공제는 1세대 1주택에만 적용됩니다. ' + (o.jCount >= 2 ? '2주택 이상이라 받을 수 없습니다.' : '공동명의 특례를 신청하면 받을 수 있습니다.') });
+    }
+  }
+
+  /* 6. 절세 포인트 */
+  var tips = [];
+  if(o.joint && o.jCount === 1){
+    tips.push(o.single
+      ? '부부 공동명의 1주택 특례를 쓴 계산입니다. 특례를 신청하지 않으면 각자 9억원씩 총 18억원까지 공제받는 대신 세액공제가 없습니다. 위 체크를 풀고 다시 계산해 어느 쪽이 유리한지 비교하십시오.'
+      : '각자 9억원씩 공제받는 방식입니다. 고령이고 오래 보유했다면 1세대 1주택 특례를 신청해 12억 공제에 세액공제 최대 80%를 받는 쪽이 유리할 수 있습니다. 위 체크를 켜고 비교해 보십시오.');
+  }
+  if(o.single && o.over > 0){
+    if(o.jAge === 0) tips.push('만 60세가 되면 연령 공제 20%가 시작됩니다.');
+    else if(o.jAge === 20) tips.push('만 65세가 되면 연령 공제가 30%로 오릅니다.');
+    else if(o.jAge === 30) tips.push('만 70세가 되면 연령 공제가 40%로 오릅니다.');
+    if(o.jHold === 0) tips.push('보유 5년을 채우면 보유 공제 20%가 시작됩니다. 날짜로 꽉 채운 5년이어야 하며 한 달 차이로 갈립니다.');
+    else if(o.jHold === 20) tips.push('보유 10년을 채우면 보유 공제가 40%로 오릅니다.');
+    else if(o.jHold === 40) tips.push('보유 15년을 채우면 보유 공제가 50%로 오릅니다.');
+  }
+  if(o.jCount >= 3 && o.taxBase > 1200000000) tips.push('과세표준 12억원을 넘는 구간에 중과세율이 걸려 있습니다. 한 채를 처분해 2주택이 되면 같은 과세표준에서 세율이 크게 내려갑니다.');
+  if(o.over > 0) tips.push('과세기준일이 6월 1일입니다. 5월 31일까지 잔금을 받고 넘기면 그해 보유세는 매수인이 부담합니다. 반대로 살 때는 6월 2일 이후 잔금이 유리합니다.');
+  if(o.single && !o.useSpecial && o.price > 900000000 && o.price <= 1000000000) tips.push('공시가격이 9억원 이하로 내려오면 재산세 특례세율(0.05~0.35%)이 적용됩니다.');
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+  return R;
 }
 
 /* ── 양도소득세 해설 — 판정 근거와 절세 포인트를 문장으로 ── */
