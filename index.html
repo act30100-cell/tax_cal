@@ -4764,7 +4764,10 @@ function tRun(){
   if(cause === 'inherit') notes.push('상속취득은 주택 수와 무관하게 중과되지 않습니다. 무주택 1가구가 상속받으면 0.8%로 낮아집니다.');
   notes.push('단순 참고용 계산입니다. 임대주택 감면, 농지 감면, 조합원 취득, 부동산 외 자산(차량 · 회원권)은 반영하지 않았습니다.');
 
-  renderLedger(T_IDS, { rows:rows, badges:badges, notes:notes,
+  var report = acqReport({ price:price, cause:cause, isHouse:isHouse, cnt:tCount, adj:$('tAdj').checked, area:$('tArea').checked,
+    first:$('tFirst').checked, nohome:$('tNoHome').checked, giftOne:$('tGiftOne').checked,
+    rate:r.rate, edu:r.edu, farm:r.farm, acqTax:acqTax, firstCut:firstCut, farmOnCut:farmOnCut });
+  renderLedger(T_IDS, { rows:rows, badges:badges, notes:notes, report:report,
     krw: korean(total) || '0원', title:'취득세 계산 결과', slug:'acquisition-tax' });
 }
 
@@ -6420,6 +6423,86 @@ function rateTable(base, surcharge){
     if(base > 0 && base <= b[0] && hi.length === 0) hi.push(i);
   });
   return { cols:['과세표준', surcharge ? '세율 (+' + Math.round(surcharge*100) + '%p)' : '세율', '누진공제'], rows:rows, hi:hi };
+}
+
+/* ── 취득세 해설 ── */
+function acqReport(o){
+  var R = [];
+  var pct = function(x, d){ var m = Math.pow(10, d||2); return Math.round(x*100*m)/m + '%'; };
+  var causeName = { buy:'유상 매매', gift:'증여', inherit:'상속', build:'신축(원시취득)' }[o.cause];
+  var causeRo = { buy:'유상 매매로', gift:'증여로', inherit:'상속으로', build:'신축으로' }[o.cause];
+  var causeRa = { buy:'유상 매매라', gift:'증여라', inherit:'상속이라', build:'신축이라' }[o.cause];
+
+  /* 1. 사례 요약 */
+  var sum = (o.isHouse ? '주택' : '주택 외 부동산') + '을 ' + causeRo + ' 취득 · 취득가액 ' + shortMoney(o.price) + '원';
+  if(o.isHouse && o.cause === 'buy') sum += ' · 취득 후 ' + (o.cnt >= 4 ? '4주택 이상' : o.cnt + '주택');
+  if(o.isHouse && (o.cause === 'buy' || o.cause === 'gift')) sum += (o.adj ? ' · 조정대상지역' : ' · 비조정대상지역');
+  if(o.isHouse) sum += (o.area ? ' · 85㎡ 초과' : ' · 85㎡ 이하');
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 세율 판정 */
+  var rp = '', rtab = null;
+  if(!o.isHouse){
+    rp = '주택이 아닌 부동산은 취득 원인에 따라 세율이 정해집니다. ' + causeRa + ' ' + pct(o.rate, 2) + '가 적용됐습니다.';
+    rtab = { cols:['취득 원인','세율'], rows:[['유상 매매','4%'],['증여','3.5%'],['상속','2.8%'],['신축','2.8%']],
+      hi:[{buy:0,gift:1,inherit:2,build:3}[o.cause]] };
+  } else if(o.cause === 'buy'){
+    if(o.rate >= 0.08){
+      rp = (o.adj ? '조정대상지역' : '비조정대상지역') + '에서 ' + (o.cnt >= 4 ? '4주택 이상' : o.cnt + '주택') + '이 되는 취득이라 <b>' + pct(o.rate,0) + ' 중과세율</b>이 적용됐습니다. 조정지역은 2주택부터, 비조정지역은 3주택부터 중과됩니다. 기준은 취득하는 주택의 소재지이고, 주택 수는 전국 기준으로 셉니다.';
+      rtab = { cols:['취득 후 주택 수','조정대상지역','비조정대상지역'], rows:[['1주택','1~3%','1~3%'],['2주택','8%','1~3%'],['3주택','12%','8%'],['4주택 이상','12%','12%']],
+        hi:[Math.min(o.cnt, 4) - 1] };
+    } else {
+      rp = '1주택 취득(또는 비조정지역 2주택)이라 취득가액 구간에 따른 표준세율입니다. 6억원 이하 1%, 9억원 초과 3%이고 그 사이는 <b>(취득가액 × 2 ÷ 3억 − 3)%</b>로 계산합니다. 이 사례는 ' + pct(o.rate, 4) + '입니다.';
+      rtab = { cols:['취득가액','세율'], rows:[['6억원 이하','1%'],['6억 초과 ~ 9억 이하','1 ~ 3% (누진)'],['9억원 초과','3%']],
+        hi:[o.price <= 600000000 ? 0 : (o.price <= 900000000 ? 1 : 2)] };
+    }
+  } else if(o.cause === 'gift'){
+    if(o.rate >= 0.12) rp = '조정대상지역의 시가표준액 3억원 이상 주택을 증여받아 <b>12% 중과</b>가 적용됐습니다. 주는 사람이 1세대 1주택자이고 배우자 · 직계존비속에게 주는 경우라면 위 체크를 켜서 3.5%로 계산하십시오.';
+    else if(o.giftOne) rp = '조정대상지역 3억원 이상이지만 주는 사람이 1세대 1주택자이고 배우자 · 직계존비속에게 주는 증여라 중과에서 제외되어 3.5%입니다.';
+    else rp = '증여 취득은 3.5%입니다. 조정대상지역 시가표준액 3억원 이상이면 12%로 뛰지만 이 사례는 해당하지 않습니다.';
+    rtab = { cols:['조건','세율'], rows:[['일반 증여','3.5%'],['조정지역 · 시가표준액 3억 이상','12%'],['위 조건이어도 1세대 1주택자 → 배우자 · 직계존비속','3.5%']],
+      hi:[o.rate >= 0.12 ? 1 : (o.giftOne ? 2 : 0)] };
+  } else if(o.cause === 'inherit'){
+    rp = o.nohome ? '무주택 1가구가 상속받는 주택이라 세율특례 <b>0.8%</b>가 적용됐습니다.' : '상속 취득은 2.8%입니다. 상속인이 무주택 1가구라면 0.8% 특례를 받을 수 있습니다.';
+    rtab = { cols:['조건','세율'], rows:[['일반 상속','2.8%'],['무주택 1가구 상속','0.8%']], hi:[o.nohome ? 1 : 0] };
+  } else {
+    rp = '신축 · 증축 등 원시취득은 2.8%입니다.';
+  }
+  R.push({ h:'취득세율 — ' + pct(o.rate, 4), p:rp, table:rtab });
+
+  /* 3. 부가세 */
+  var ap = '지방교육세는 ' + pct(o.edu, 2) + '입니다. ';
+  if(o.cause === 'buy' && o.isHouse && o.rate < 0.08) ap += '주택 유상취득 표준세율은 취득세율의 10분의 1로 계산합니다. ';
+  else if(o.rate >= 0.08) ap += '중과세율에서는 0.4%로 고정됩니다. ';
+  else if(o.cause === 'gift') ap += '증여는 0.3%입니다. ';
+  else if(o.cause === 'inherit' || o.cause === 'build') ap += '상속 · 신축은 0.16%입니다. ';
+  else ap += '주택 외 유상취득은 0.4%입니다. ';
+  ap += '농어촌특별세는 ' + (o.farm > 0 ? pct(o.farm, 2) + '입니다.' : '없습니다.') + ' ';
+  if(o.isHouse && !o.area) ap += '전용면적 85㎡ 이하 주택은 농특세가 <b>비과세</b>입니다.';
+  else if(o.rate >= 0.08) ap += '중과세율에서는 표준세율분 0.2%에 중과 가산분의 10%가 더해져 ' + pct(o.farm, 2) + '가 됩니다.';
+  else ap += '표준세율 2% 상당액의 10%인 0.2%입니다.';
+  R.push({ h:'지방교육세 · 농어촌특별세', p:ap });
+
+  /* 4. 생애최초 */
+  if(o.first){
+    var fp = o.firstCut > 0
+      ? ('취득가액 12억원 이하 주택이라 취득세 ' + comma(Math.round(o.acqTax)) + '원에서 <b>' + comma(o.firstCut) + '원</b>을 감면받았습니다. 한도는 200만원이고 취득세가 그보다 작으면 전액 감면됩니다.' + (o.farmOnCut ? ' 감면분에는 농특세 20%인 ' + comma(o.farmOnCut) + '원이 붙습니다.' : (o.area ? '' : ' 85㎡ 이하라 감면분 농특세는 비과세입니다.')))
+      : '취득가액이 12억원을 넘어 생애최초 감면을 받지 못했습니다.';
+    fp += ' 감면을 받으면 3개월 안에 전입해 3년 이상 실거주해야 하고, 그 전에 팔거나 임대하면 추징됩니다.';
+    R.push({ h:'생애최초 감면', p:fp });
+  }
+
+  /* 5. 절세 포인트 */
+  var tips = [];
+  if(o.isHouse && o.cause === 'buy' && o.rate >= 0.08) tips.push('취득 순서를 바꾸면 세율이 달라집니다. 종전 주택을 먼저 처분하거나, 일시적 2주택 요건(3년 내 처분)을 갖추면 1주택 세율로 신고할 수 있습니다. 시가표준액 1억원 이하 주택은 주택 수에서 빠집니다.');
+  if(o.isHouse && o.cause === 'buy' && !o.first && o.price <= 1200000000) tips.push('본인과 배우자 모두 주택을 소유한 적이 없다면 생애최초 감면 200만원 대상일 수 있습니다.');
+  if(o.isHouse && o.cause === 'gift' && o.rate >= 0.12) tips.push('증여자가 1세대 1주택자라면 3.5%로 내려갑니다. 그렇지 않다면 조정대상지역 해제 후로 증여 시기를 조정하거나, 공시가격이 3억원 미만인 주택부터 증여하는 방안이 있습니다.');
+  if(o.cause === 'gift' && o.isHouse) tips.push('증여 취득세 과세표준은 시가인정액입니다. 증여일 전 6개월 · 후 3개월 안의 매매 · 감정 · 공매 가액이 있으면 그 가액이 기준이 되므로, 유사 거래가 적은 시기에 증여하면 시가표준액으로 신고할 여지가 있습니다.');
+  if(o.cause === 'inherit' && o.isHouse && !o.nohome) tips.push('상속인이 무주택 1가구라면 0.8% 특례를 신청하십시오. 2.8%와 비교하면 2%p 차이입니다.');
+  if(o.isHouse && o.area && o.cause === 'buy') tips.push('85㎡ 이하 주택이었다면 농특세 0.2%가 붙지 않았습니다. 같은 가격이면 면적 경계에서 부담이 갈립니다.');
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+
+  return R;
 }
 
 /* ── 보유세 해설 ── */
