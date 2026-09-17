@@ -1018,7 +1018,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       </div>
       <div class="field" id="gMarryWrap">
         <label class="chk" style="padding-top:0"><input type="checkbox" id="gMarry">
-          <span>혼인 · 출산 증여재산공제 적용 <b>1억원</b><em>직계존속에게 받은 재산으로, 혼인신고 전후 2년 또는 출생 · 입양일부터 2년 이내</em></span></label>
+          <span>혼인 · 출산 증여재산공제 적용 <b>1억원</b><em>직계존속에게 받은 재산으로, 혼인신고 전후 2년 또는 출생 · 입양일부터 2년 이내. 재산 종류나 용도와 무관하게 <b>시기 요건만 맞으면</b> 위에 넣은 금액에서 1억원까지 추가로 공제됩니다</em></span></label>
       </div>
       <div class="field">
         <label class="chk" style="padding-top:0"><input type="checkbox" id="gPayer">
@@ -3853,9 +3853,11 @@ function gRun(){
   if(prior) rows.push(['②','+','10년 내 동일인 증여재산','재차증여 합산', won(prior)]);
   if(debt)  rows.push(['③','−','인수 채무액','부담부증여', won(Math.min(debt, amt))]);
   rows.push(['','','증여세 과세가액','', won(taxable), 'sum']);
-  rows.push(['④','−','증여재산공제',
-    relName + ' ' + comma(relDed) + '원' + (marry ? ' + 혼인·출산 ' + comma(marry) + '원' : ''),
-    won(ded), ded?'':'muted', 'gded']);
+  /* 일반 공제(§53)와 혼인·출산 공제(§53의2)는 별개 제도 — 따로 표시하고 공제 순서대로 나눈다 */
+  var dedGeneral = Math.min(relDed, ded);
+  var dedMarry = Math.max(0, ded - dedGeneral);
+  rows.push(['④','−','증여재산공제', relName + ' · 10년 한도 ' + comma(relDed) + '원', won(dedGeneral), dedGeneral?'':'muted', 'gded']);
+  if(marry) rows.push(['','−','혼인 · 출산 증여재산공제', '별도 한도 1억원 · 상증세법 §53의2', won(dedMarry), dedMarry?'':'muted']);
   rows.push(['','','과세표준','', won(taxBase), 'sum']);
   rows.push(['⑤','×','세율',
     taxBase > 0 ? (Math.round(pr.rate*100) + '% · 누진공제 ' + comma(pr.ded) + '원') : '과세표준 없음',
@@ -3942,7 +3944,11 @@ function gRun(){
   }
   notes.push('단순 참고용 계산입니다. 가업승계 과세특례, 창업자금 특례, 재해손실공제 등은 반영하지 않았습니다.');
 
-  renderLedger(G_IDS, { rows:rows, badges:badges, notes:notes,
+  var report = giftReport({ amt:amt, prior:prior, debt:debt, rel:rel, relDed:relDed, marry:marry, skip:skip, ded:ded,
+    taxBase:taxBase, rate:pr.rate, calc:calc, surRate:surRate, sur:sur, paidCredit:paidCredit, capped:capped,
+    payerPays:payerPays, giftAmt:giftAmt, payable:payable,
+    hasBT:hasBT, btTotal:hasBT ? bt.total : 0, plainPay:(typeof plain !== 'undefined' ? plain.payable : 0), gap:(typeof gap !== 'undefined' ? gap : 0) });
+  renderLedger(G_IDS, { rows:rows, badges:badges, notes:notes, report:report,
     krw: korean(payable) || '0원', title:'증여세 계산 결과', slug:'gift-tax' });
 }
 
@@ -4249,7 +4255,14 @@ function sRun(){
     notes.push('배우자가 승계한 재산에서 1차 상속세 부담분을 빼고 2차 상속재산을 계산했습니다. 연대납세의무로 자녀가 대신 낼 수도 있어 결과가 달라질 수 있습니다.');
   }
 
-  renderLedger(S_IDS, { rows:rows, badges:badges, notes:notes, chart:chart, chartNote:chartNote,
+  var report = inheritReport({ asset:asset, prior:prior, debt:debt, hasSpouse:hasSpouse, childCount:childCount,
+    spouseGet:spouseGet, legal:$('sLegal').checked, skip:$('sSkip').checked, lump:lump,
+    share:(childCount > 0 ? 1.5/(1.5+childCount) : 1), spouseDed:spouseDed, limit:(hasSpouse ? Math.max(0, Math.min(taxable*(childCount>0?1.5/(1.5+childCount):1) - spPriorBase, 3000000000)) : 0),
+    spPriorBase:spPriorBase, fin:fin, finDed:finDed, homeDed:homeDed, capHit:capHit, dedRaw:dedRaw, dedCap:dedCap,
+    taxBase:taxBase, rate:pr.rate, sur:sur, paidCredit:paidCredit, sCapped:sCapped, payable:payable,
+    use2:use2, s2Year:s2Year, reRate:reRate(s2Year),
+    now:(use2 ? now : 0), bestG:(use2 ? bestG : 0), saveS:(use2 ? saveS : 0) });
+  renderLedger(S_IDS, { rows:rows, badges:badges, notes:notes, chart:chart, chartNote:chartNote, report:report,
     chartTitle: '배우자 몫에 따른 1차 + 2차 합계',
     krw: korean(payable) || '0원', title:'상속세 계산 결과', slug:'inherit-tax' });
 }
@@ -4978,7 +4991,10 @@ function cRun(){
   notes.push('상속공제는 일괄공제와 배우자상속공제(법정상속분 기준)만 반영했습니다. 금융재산 · 동거주택 공제와 상속공제 종합한도는 넣지 않았습니다.');
   notes.push('증여 대상이 부동산이라면 <b>취득세</b>가 별도로 발생하고, 10년 내 양도 시 <b>이월과세</b>가 적용됩니다. 각 계산기에서 함께 확인하십시오.');
 
-  renderLedger(C_IDS, { rows:rows, badges:badges, notes:notes, chart:chart,
+  var report = compareReport({ estate:estate, gift:gift, relName:relName, rel:rel, isGrand:isGrand, yrs:YRS, recv:cRecv,
+    hasSpouse:hasSpouse, child:cChild, A:A.pay, giftPay:gB.pay, iBpay:iB.pay, totalB:totalB, totalC:totalC, save:save,
+    giftDed:gB.ded, surRate:gB.surRate || 0 });
+  renderLedger(C_IDS, { rows:rows, badges:badges, notes:notes, chart:chart, report:report,
     chartTitle: '언제 넘기느냐에 따른 세금',
     chartNote: (save > 0
       ? '<b style="color:var(--pine)">② 가 가장 적습니다</b> — ① 보다 ' + shortMoney(save) + '원 덜 냅니다'
@@ -6423,6 +6439,256 @@ function rateTable(base, surcharge){
     if(base > 0 && base <= b[0] && hi.length === 0) hi.push(i);
   });
   return { cols:['과세표준', surcharge ? '세율 (+' + Math.round(surcharge*100) + '%p)' : '세율', '누진공제'], rows:rows, hi:hi };
+}
+
+/* ── 증여 vs 상속 비교 해설 ── */
+function compareReport(o){
+  var R = [];
+  var pct = function(x){ return Math.round(x*100) + '%'; };
+
+  /* 1. 사례 요약 */
+  var who = { spouse:'배우자', linealAdult:'성년 자녀', linealMinor:'미성년 자녀', grandAdult:'성년 손자녀', grandMinor:'미성년 손자녀' }[o.rel] || o.relName;
+  var sum = '총 재산 ' + shortMoney(o.estate) + '원 중 ' + shortMoney(o.gift) + '원을 ' + who + '에게';
+  if(o.recv > 1) sum += ' ' + o.recv + '명에게 나눠';
+  sum += ' 미리 증여하는 경우 · 상속인은 ' + (o.hasSpouse ? '배우자와 ' : '') + '자녀 ' + o.child + '명';
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 세 갈래 */
+  var tp = '<b>①</b> 증여 없이 전부 상속하면 ' + comma(Math.round(o.A)) + '원. ';
+  tp += '<b>②</b> 지금 증여하고 ' + o.yrs + '년을 넘겨 상속하면 증여세 ' + comma(Math.round(o.giftPay)) + '원과 남은 재산의 상속세 ' + comma(Math.round(o.iBpay)) + '원을 합쳐 ' + comma(Math.round(o.totalB)) + '원. ';
+  tp += '<b>③</b> 증여 후 ' + o.yrs + '년 안에 상속이 개시되면 증여재산이 상속재산에 합산되어 ' + comma(Math.round(o.totalC)) + '원. ';
+  tp += '③ 은 이미 낸 증여세를 공제받으므로 ① 과 거의 같아지고, 그래서 ② 와 ① 의 차이가 사전증여의 실익입니다.';
+  R.push({ h:'세 갈래 비교', p:tp });
+
+  /* 3. 왜 줄어드나 / 왜 안 줄어드나 */
+  if(o.save > 10000){
+    var wp = '미리 증여하면 세금이 줄어드는 이유는 두 가지입니다. ';
+    wp += '첫째, 상속세는 재산 전체에 한 번에 누진세율을 적용하는데, 일부를 떼어 증여하면 <b>증여세와 상속세가 각각 낮은 구간에서 시작</b>합니다. ';
+    wp += '둘째, 증여재산공제 ' + comma(o.giftDed) + '원을 상속공제와 <b>별도로</b> 받습니다. ';
+    if(o.recv > 1) wp += '여기에 ' + o.recv + '명에게 나눠 각자 공제와 낮은 세율을 적용받아 효과가 더 커졌습니다. ';
+    wp += '다만 이 실익은 <b>' + o.yrs + '년을 넘겨야</b> 생깁니다. 그 안에 상속이 개시되면 합산되어 실익이 사라집니다.';
+    R.push({ h:'왜 ' + comma(Math.round(o.save)) + '원이 줄어드나', p:wp });
+  } else if(o.save < -10000){
+    var np = '이 사례는 미리 증여하는 쪽이 오히려 <b>' + comma(Math.round(-o.save)) + '원 불리</b>합니다. ';
+    np += o.A === 0
+      ? '재산이 상속공제 안에 들어와 그대로 두면 상속세가 없는데, 증여하면 증여세를 확정적으로 내기 때문입니다. '
+      : '상속공제가 커서 상속세 부담이 작은데, 증여세는 공제가 작아 그보다 더 나오기 때문입니다. ';
+    np += '상속공제가 재산 대부분을 덮는 경우에는 사전증여 실익이 없습니다.';
+    R.push({ h:'왜 사전증여가 불리한가', p:np });
+  } else {
+    R.push({ h:'차이가 없는 사례', p:'증여하든 그대로 두든 세금이 같습니다. 증여재산이 공제 안에 들어와 증여세가 없고, 상속재산이 줄어도 상속세가 그만큼 줄지 않는 구간이기 때문입니다.' });
+  }
+
+  /* 4. 합산 기간 */
+  var yp = '';
+  if(o.isGrand){
+    yp = '손자녀는 자녀가 살아 있는 한 <b>상속인이 아니어서</b> 합산 기간이 10년이 아니라 <b>5년</b>입니다. 대신 세대를 건너뛰었으므로 증여세에 ' + pct(o.surRate) + ' 할증이 붙습니다. 증여세는 더 내지만 5년만 버티면 되므로, 10년을 넘기기 어려운 고령 증여자에게 실익이 있습니다. 자녀가 먼저 사망해 손자녀가 대습상속인이 된 경우에는 10년 합산이고 할증도 없습니다.';
+  } else {
+    yp = '상속인에게 한 증여는 상속 개시 전 <b>10년</b> 안의 것을 합산합니다. 증여일부터 10년이 되는 날 이후에 상속이 개시되어야 빠집니다. 상속인이 아닌 사람(손자녀 · 사위 · 며느리 등)에게 한 증여는 5년입니다.';
+    if(o.rel === 'spouse') yp += ' 배우자에게 준 재산은 나중에 배우자가 사망하면 2차 상속으로 다시 과세되므로, 이 비교만으로 판단하기 어렵습니다. 상속세 계산기의 2차 상속까지 보기를 함께 보십시오.';
+  }
+  var ytab = { cols:['증여 대상','합산 기간','증여세 할증'], rows:[['배우자 · 자녀 (상속인)','10년','없음'],['손자녀 (자녀 생존 시)','5년','30% (미성년 20억 초과 40%)'],['사위 · 며느리 등 상속인 아님','5년','없음']], hi:[o.isGrand ? 1 : 0] };
+  R.push({ h:'합산 기간 — ' + o.yrs + '년', p:yp, table:ytab });
+
+  /* 5. 절세 포인트 */
+  var tips = [];
+  if(o.save > 10000){
+    tips.push('증여를 서두를수록 ' + o.yrs + '년 시계가 빨리 돌아갑니다. 건강할 때 시작해야 실익을 챙깁니다.');
+    if(o.recv === 1 && o.child >= 2 && !o.isGrand && o.rel !== 'spouse') tips.push('자녀가 ' + o.child + '명이면 나눠 주는 것을 검토하십시오. 위 인원 선택을 바꿔 보면 차이가 보입니다.');
+    if(!o.isGrand && o.child >= 1) tips.push('증여자가 고령이라 10년이 부담스러우면 손자녀 증여를 검토하십시오. 할증 30%를 감수하는 대신 5년으로 줄어듭니다.');
+  }
+  tips.push('10년마다 증여재산공제가 새로 생기므로, 한 번에 주기보다 10년 주기로 나눠 주면 공제를 여러 번 씁니다. 이 화면은 한 번의 증여만 비교합니다.');
+  if(o.hasSpouse) tips.push('이 비교는 배우자 몫을 법정상속분으로 고정했습니다. 배우자에게 얼마를 줄지는 상속세 계산기의 2차 상속까지 보기로 정하십시오.');
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+
+  return R;
+}
+
+/* ── 상속세 해설 ── */
+function inheritReport(o){
+  var R = [];
+  var pct = function(x){ return Math.round(x*100) + '%'; };
+
+  /* 1. 사례 요약 */
+  var sum = '상속재산 ' + shortMoney(o.asset) + '원';
+  if(o.prior) sum += ' · 사전증여 ' + shortMoney(o.prior) + '원 합산';
+  if(o.debt) sum += ' · 채무 ' + shortMoney(o.debt) + '원';
+  sum += ' · 상속인은 ' + (o.hasSpouse ? '배우자와 ' : '') + (o.childCount ? '자녀 ' + o.childCount + '명' : (o.hasSpouse ? '' : '자녀 없음'));
+  if(o.hasSpouse && o.childCount === 0) sum = sum.replace('배우자와 ', '배우자 단독');
+  if(o.hasSpouse) sum += ' · 배우자 상속액 ' + shortMoney(o.spouseGet) + '원' + (o.legal ? '(법정상속분)' : '');
+  if(o.skip) sum += ' · 세대생략 상속';
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 일괄공제 vs 인적공제 */
+  var lp = '기초공제 2억원에 자녀 1명당 5,000만원을 더한 인적공제 합계와 일괄공제 5억원 중 <b>큰 쪽</b>을 적용합니다. ';
+  if(o.hasSpouse && o.childCount === 0) lp += '배우자가 단독으로 상속받는 경우에는 일괄공제를 쓸 수 없어 기초공제 2억원만 적용됩니다. 대신 배우자상속공제가 크게 적용됩니다.';
+  else if(o.lump > 500000000) lp += '자녀가 ' + o.childCount + '명이라 인적공제 합계 ' + comma(o.lump) + '원이 일괄공제보다 커서 그쪽을 적용했습니다.';
+  else lp += '자녀 ' + o.childCount + '명이면 인적공제 합계가 ' + comma(200000000 + o.childCount*50000000) + '원으로 5억원에 못 미쳐 일괄공제 5억원을 적용했습니다. 자녀가 7명 이상이어야 인적공제가 더 커집니다.';
+  R.push({ h:'일괄공제 · 인적공제 — ' + comma(o.lump) + '원', p:lp });
+
+  /* 3. 배우자상속공제 */
+  if(o.hasSpouse){
+    var sp = '배우자가 실제로 상속받는 금액을 공제하되, <b>최소 5억원</b>은 보장되고 <b>법정상속분과 30억원</b>이 한도입니다. ';
+    sp += '법정상속분은 배우자 1.5 : 자녀 각 1의 비율이라 자녀 ' + o.childCount + '명이면 배우자 몫은 ' + pct(o.share) + '입니다. ';
+    if(o.spouseGet < 500000000) sp += '실제 상속액이 5억원에 못 미쳐 최소 보장액 5억원을 공제했습니다. ';
+    else if(o.spouseDed < o.spouseGet) sp += '실제 상속액 ' + comma(o.spouseGet) + '원이 한도 ' + comma(Math.round(o.limit)) + '원을 넘어 한도까지만 공제됐습니다. ';
+    else sp += '실제 상속액 ' + comma(o.spouseGet) + '원을 그대로 공제했습니다. ';
+    if(o.spPriorBase > 0) sp += '배우자가 미리 받은 증여의 과세표준 ' + comma(Math.round(o.spPriorBase)) + '원만큼 한도가 줄었습니다. 미리 받은 몫은 상속으로 받을 수 있는 몫에서 앞당겨 쓴 것으로 보기 때문입니다. ';
+    sp += '배우자 몫을 늘리면 1차 상속세는 줄지만 그 재산이 배우자 사망 시 다시 과세되므로 2차 상속까지 함께 봐야 합니다.';
+    var stab = { cols:['자녀 수','배우자 법정상속분'], rows:[['0명 (단독)','100%'],['1명','60%'],['2명','42.9%'],['3명','33.3%'],['4명','27.3%'],['5명','23.1%']], hi:[Math.min(o.childCount, 5)] };
+    R.push({ h:'배우자상속공제 — ' + comma(Math.round(o.spouseDed)) + '원', p:sp, table:stab });
+  }
+
+  /* 4. 금융재산 · 동거주택 */
+  if(o.finDed > 0 || o.homeDed > 0){
+    var ep = '';
+    if(o.finDed > 0) ep += '순금융재산 ' + shortMoney(o.fin) + '원에 대해 ' + comma(o.finDed) + '원을 공제했습니다. 2천만원 이하는 전액, 1억원 이하는 2천만원, 1억원 초과는 20%이며 2억원이 상한입니다. 예금 · 주식 · 보험금 등에서 금융채무를 뺀 순액이 기준입니다. ';
+    if(o.homeDed > 0) ep += '10년 이상 함께 산 무주택 상속인이 주택을 상속받아 동거주택 상속공제 ' + comma(o.homeDed) + '원(최대 6억원)을 적용했습니다. 담보채무를 뺀 주택가액이 기준입니다.';
+    R.push({ h:'금융재산 · 동거주택 공제', p:ep });
+  }
+
+  /* 5. 종합한도 */
+  if(o.capHit){
+    R.push({ h:'상속공제 종합한도 적용', p:'사전증여가 있으면 그 과세표준만큼 상속공제 한도가 줄어듭니다(상증세법 제24조). 미리 증여해 상속재산을 줄여놓고 남은 재산에 공제를 다 받는 것을 막는 규정입니다. 원래 공제 합계 ' + comma(Math.round(o.dedRaw)) + '원이 한도 ' + comma(Math.round(o.dedCap)) + '원까지만 적용됐습니다. 증여 후 10년이 지나면 합산 자체가 안 되므로 이 한도도 사라집니다.' });
+  }
+
+  /* 6. 세율 */
+  var rtab = { cols:['과세표준','세율','누진공제'], rows:[], hi:[] };
+  var names = ['1억원 이하','5억원 이하','10억원 이하','30억원 이하','30억원 초과'];
+  GIFT_BR.forEach(function(b, i){
+    rtab.rows.push([names[i], pct(b[1]), b[2] ? comma(b[2]) + '원' : '—']);
+    if(o.taxBase > 0 && o.taxBase <= b[0] && rtab.hi.length === 0) rtab.hi.push(i);
+  });
+  var rp = o.taxBase > 0
+    ? ('과세표준 ' + comma(Math.round(o.taxBase)) + '원은 ' + names[rtab.hi[0]] + ' 구간이라 ' + pct(o.rate) + '가 적용됐습니다. 증여세와 같은 5단계 누진세율입니다.')
+    : '상속재산이 공제 안에 들어와 과세표준이 0원입니다. 낼 세금은 없지만 신고를 해두면 나중에 그 재산을 팔 때 취득가액이 상속 당시 평가액으로 인정되어 양도세가 줄어듭니다.';
+  R.push({ h:'세율 — ' + (o.taxBase > 0 ? pct(o.rate) : '해당 없음'), p:rp, table:o.taxBase > 0 ? rtab : null });
+
+  /* 7. 할증 · 세액공제 */
+  if(o.sur > 0) R.push({ h:'세대생략 할증 30%', p:'손자녀가 직접 상속받으면 자녀 세대의 상속세를 건너뛰므로 산출세액에 30%를 더합니다. 자녀가 먼저 사망해 손자녀가 대습상속하는 경우는 할증이 없습니다.' });
+  if(o.paidCredit > 0) R.push({ h:'증여세액공제 — ' + comma(Math.round(o.paidCredit)) + '원', p:'합산한 사전증여에 대해 이미 낸 증여세를 빼줍니다. 다만 그 증여재산이 상속세 과세표준에서 차지하는 몫까지가 한도입니다.' + (o.sCapped ? ' 입력한 세액이 한도를 넘어 한도까지만 반영됐습니다.' : '') });
+
+  /* 8. 2차 상속 */
+  if(o.use2){
+    var tp = '배우자가 받은 ' + shortMoney(o.spouseGet) + '원은 배우자 재산이 되어 나중에 다시 상속됩니다. 2차에는 배우자가 없어 일괄공제 5억원뿐입니다. ';
+    if(o.reRate > 0) tp += '두 분의 사망 간격이 ' + o.s2Year + '년이라 <b>단기 재상속 공제 ' + pct(o.reRate) + '</b>를 받았습니다. 1차에 낸 세금 중 다시 상속되는 몫에 해당하는 부분을 이 비율만큼 빼줍니다. 1년 이내 100%에서 해마다 10%p씩 줄어 10년을 넘기면 없어집니다. ';
+    else tp += '두 분의 사망 간격이 10년을 넘어 단기 재상속 공제가 없습니다. ';
+    tp += '1차와 2차를 합쳐 ' + comma(Math.round(o.now)) + '원이고, ';
+    tp += o.saveS > 10000
+      ? ('배우자 몫을 ' + comma(o.bestG) + '원으로 바꾸면 ' + comma(Math.round(o.saveS)) + '원 줄어듭니다. 배우자 실제 상속액 칸 아래의 채우기 버튼으로 바로 적용할 수 있습니다.')
+      : '지금 배분이 이미 가장 적습니다.';
+    var rtab2 = { cols:['재상속 기간','공제율'], rows:[], hi:[] };
+    for(var yi = 1; yi <= 10; yi++){ rtab2.rows.push([yi + '년 이내', (11 - yi) * 10 + '%']); if(o.s2Year === yi) rtab2.hi.push(yi - 1); }
+    rtab2.rows.push(['10년 초과', '없음']); if(o.s2Year > 10) rtab2.hi.push(10);
+    R.push({ h:'2차 상속과 단기 재상속 공제', p:tp, table:rtab2 });
+  }
+
+  /* 9. 절세 포인트 */
+  var tips = [];
+  if(o.hasSpouse && !o.use2 && o.taxBase > 0) tips.push('배우자 몫을 얼마로 할지가 가장 큰 변수입니다. 2차 상속까지 보기를 켜면 두 번의 세금을 합쳐 최적 배분을 찾아드립니다.');
+  if(o.taxBase > 0 && !o.prior) tips.push('생전에 10년 단위로 나눠 증여하면 상속재산이 줄고 증여 공제를 여러 번 씁니다. 다만 상속 개시 전 10년 안의 증여는 합산되고 공제 한도도 줄어드니, 건강할 때 서둘러야 실익이 있습니다.');
+  if(o.fin === 0 && o.taxBase > 0) tips.push('예금 · 보험금 · 주식이 있다면 순금융재산가액을 넣어 보십시오. 최대 2억원까지 공제됩니다. 상속세 납부 재원으로 종신보험을 설계하면 보험금이 금융재산공제 대상이 되면서 납부 자금도 마련됩니다.');
+  if(o.payable > 20000000) tips.push('납부세액이 2천만원을 넘으면 최대 10년 연부연납이 가능합니다. 부동산이 대부분이라 현금이 부족하면 물납도 검토하십시오.');
+  if(o.taxBase > 0) tips.push('상속개시일이 속한 달의 말일부터 6개월 안에 신고하면 3%를 공제받습니다.');
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+
+  return R;
+}
+
+/* ── 증여세 해설 ── */
+function giftReport(o){
+  var R = [];
+  var pct = function(x){ return Math.round(x*100) + '%'; };
+  var relFull = { spouse:'배우자에게서', linealAdult:'직계존속(부모 · 조부모)에게서 성년 자녀 · 손자녀가', linealMinor:'직계존속에게서 미성년 자녀 · 손자녀가',
+                  descendant:'자녀 · 손자녀에게서 부모 · 조부모가', relative:'기타 친족(형제자매 · 삼촌 등)에게서', other:'친족이 아닌 사람에게서' }[o.rel];
+
+  /* 1. 사례 요약 */
+  var sum = relFull + ' ' + shortMoney(o.amt) + '원을 증여받음';
+  if(o.payerPays) sum += ' (세금은 주는 사람이 부담)';
+  if(o.prior) sum += ' · 10년 안에 같은 사람에게 ' + shortMoney(o.prior) + '원을 먼저 받음';
+  if(o.debt) sum += ' · 빚 ' + shortMoney(o.debt) + '원을 함께 넘김';
+  if(o.skip) sum += ' · 세대를 건너뛴 증여';
+  if(o.marry) sum += ' · 혼인 · 출산 공제';
+  R.push({ h:'이 사례는', p:sum + '.' });
+
+  /* 2. 증여재산공제 */
+  var dp = '증여재산공제는 <b>누구에게 받았는지</b>로 정해지고, 같은 관계에서 <b>10년 동안 합쳐서</b> 한 번만 받는 한도입니다. ';
+  dp += (o.relDed ? ('이 관계의 한도는 ' + comma(o.relDed) + '원') : '친족이 아니라 공제가 없습니다') + '. ';
+  if(o.ded < o.relDed + o.marry) dp += '증여재산이 공제보다 작아 재산 금액까지만 공제됐습니다. ';
+  var dtab = { cols:['증여자 → 수증자','공제 한도 (10년)'],
+    rows:[['배우자','6억원'],['직계존속 → 성년 자녀 · 손자녀','5,000만원'],['직계존속 → 미성년 자녀 · 손자녀','2,000만원'],['직계비속 → 부모 · 조부모','5,000만원'],['기타 친족','1,000만원'],['혼인 · 출산 시 직계존속 추가','+ 1억원']],
+    hi:[{spouse:0,linealAdult:1,linealMinor:2,descendant:3,relative:4,other:-1}[o.rel]].filter(function(i){ return i >= 0; }) };
+  if(o.marry) dtab.hi.push(5);
+  R.push({ h:'증여재산공제 — ' + comma(Math.min(o.relDed, o.ded)) + '원', p:dp, table:dtab });
+
+  /* 혼인 · 출산 공제는 별개 조문(§53의2) — 항목을 따로 둔다 */
+  if(o.marry){
+    var mAmt = Math.max(0, o.ded - Math.min(o.relDed, o.ded));
+    R.push({ h:'혼인 · 출산 증여재산공제 — ' + comma(mAmt) + '원',
+      p:'위 일반 공제와는 <b>별개의 제도</b>입니다(상증세법 제53조의2). 혼인신고일 전후 2년 또는 자녀 출생 · 입양일부터 2년 안에 직계존속에게 받은 재산에 대해 <b>평생 1억원</b>까지 추가로 공제합니다. 10년마다 새로 생기는 일반 공제와 달리 혼인과 출산을 합쳐 1억원이 한 번뿐입니다. 신고서에도 별도 항목으로 적으며, 혼인 공제를 받고 2년 안에 혼인하지 않으면 추징됩니다.' });
+  }
+
+  /* 3. 10년 합산 */
+  if(o.prior){
+    var pp = '같은 사람에게 10년 안에 받은 ' + shortMoney(o.prior) + '원을 이번 증여에 <b>합산</b>해 세율을 정했습니다. 직계존속은 부모를 한 사람으로 보므로 아버지와 어머니에게 받은 것이 합쳐집니다. 나눠 받아 낮은 세율을 여러 번 적용받는 것을 막는 규정입니다. ';
+    pp += '먼저 낸 증여세 산출세액은 <b>납부세액공제</b>로 빼주되, 합산한 증여재산이 과세표준에서 차지하는 몫까지가 한도입니다. 이 사례는 ' + comma(Math.round(o.paidCredit)) + '원을 공제했습니다.';
+    if(o.capped) pp += ' 입력한 세액이 한도를 넘어 한도까지만 반영됐습니다.';
+    R.push({ h:'10년 합산과 납부세액공제', p:pp });
+  }
+
+  /* 4. 세율 */
+  var rtab = { cols:['과세표준','세율','누진공제'], rows:[], hi:[] };
+  var names = ['1억원 이하','5억원 이하','10억원 이하','30억원 이하','30억원 초과'];
+  GIFT_BR.forEach(function(b, i){
+    rtab.rows.push([names[i], pct(b[1]), b[2] ? comma(b[2]) + '원' : '—']);
+    if(o.taxBase > 0 && o.taxBase <= b[0] && rtab.hi.length === 0) rtab.hi.push(i);
+  });
+  var rp = o.taxBase > 0
+    ? ('과세표준 ' + comma(Math.round(o.taxBase)) + '원은 ' + names[rtab.hi[0]] + ' 구간이라 ' + pct(o.rate) + '가 적용됐습니다. 상속세와 같은 5단계 누진세율이며, 구간을 넘는 부분에만 높은 세율이 붙고 누진공제가 그 조정을 대신합니다.')
+    : '증여재산이 공제 안에 들어와 과세표준이 0원입니다. 낼 세금이 없지만 신고는 해두는 편이 좋습니다. 나중에 자금출처를 소명할 때 근거가 되고, 10년 합산 이력도 남습니다.';
+  R.push({ h:'세율 — ' + (o.taxBase > 0 ? pct(o.rate) : '해당 없음'), p:rp, table:o.taxBase > 0 ? rtab : null });
+
+  /* 5. 세대생략 할증 */
+  if(o.skip && o.sur > 0){
+    R.push({ h:'세대생략 할증 ' + pct(o.surRate), p:'조부모가 손자녀에게 바로 주면 부모 세대의 증여세를 한 번 건너뛰므로 산출세액에 <b>' + pct(o.surRate) + '</b>를 더합니다. ' + (o.surRate >= 0.4 ? '미성년 손자녀가 20억원을 넘게 받아 40%입니다. ' : '') + '할증액은 ' + comma(Math.round(o.sur)) + '원입니다. 대신 손자녀는 상속인이 아니어서 상속 개시 전 <b>5년</b>만 넘기면 상속재산에 합산되지 않습니다. 10년을 넘기기 어려운 고령 증여자라면 할증을 감수할 실익이 있습니다.' });
+  }
+
+  /* 6. 대납 */
+  if(o.payerPays){
+    R.push({ h:'증여자가 세금을 부담하는 경우', p:'증여세는 받는 사람이 내는 세금이라, 주는 사람이 대신 내면 그 세금만큼을 <b>더 준 것</b>이 됩니다. 그러면 세금이 다시 늘고, 늘어난 세금을 또 내주면 또 늘어납니다. 이 계산은 그 순환이 멈추는 지점을 찾아 증여재산가액을 ' + comma(o.giftAmt) + '원으로 잡았습니다. 받는 사람에게 ' + shortMoney(o.amt) + '원이 온전히 남고, 주는 사람은 세금 ' + comma(Math.round(o.payable)) + '원까지 총 ' + comma(Math.round(o.amt + o.payable)) + '원을 씁니다. 현금 증여라면 받은 돈으로 세금을 내면 되므로 대납 문제가 없고, 이 계산은 세금 몫까지 얹어 주려면 얼마가 필요한지를 보여줍니다.' });
+  }
+
+  /* 7. 부담부증여 */
+  if(o.hasBT){
+    var bp = '빚 ' + shortMoney(o.debt) + '원을 함께 넘겼으므로 그만큼은 <b>판 것</b>으로 봅니다. 받는 사람은 빚을 뺀 ' + shortMoney(o.amt - o.debt) + '원에 증여세를, 주는 사람은 빚 ' + shortMoney(o.debt) + '원을 양도가액으로 한 양도소득세 ' + comma(Math.round(o.btTotal)) + '원을 각각 냅니다. ';
+    bp += o.gap > 0
+      ? ('빚을 미리 갚고 깨끗하게 주면 증여세만 ' + comma(Math.round(o.plainPay)) + '원인데, 함께 넘기면 합쳐서 ' + comma(Math.round(o.payable + o.btTotal)) + '원이라 <b>' + comma(Math.round(o.gap)) + '원 유리</b>합니다.')
+      : (o.gap < 0 ? ('빚을 미리 갚고 주면 ' + comma(Math.round(o.plainPay)) + '원인데 함께 넘기면 ' + comma(Math.round(o.payable + o.btTotal)) + '원이라 오히려 <b>' + comma(Math.round(-o.gap)) + '원 불리</b>합니다. 양도차익이 커서 양도세가 증여세 절감분을 넘어섰습니다.') : '두 방식의 총 부담이 같습니다.');
+    bp += ' 받는 사람이 그 빚을 실제로 갚아야 인정되며, 주는 사람이 대신 갚아준 사실이 드러나면 다시 증여세가 과세됩니다.';
+    R.push({ h:'부담부증여 — 증여세와 양도세로 나뉨', p:bp });
+  }
+
+  /* 8. 절세 포인트 */
+  var tips = [];
+  if(o.taxBase > 0 && !o.prior && o.rel !== 'other'){
+    tips.push('10년마다 공제가 새로 생깁니다. 지금 ' + comma(o.relDed + o.marry) + '원을 쓰면 10년 뒤 다시 같은 금액을 공제받습니다. 자녀가 어릴 때부터 10년 단위로 나눠 주면 공제를 여러 번 씁니다.');
+  }
+  if(o.taxBase > 100000000 && (o.rel === 'linealAdult' || o.rel === 'linealMinor')){
+    tips.push('한 사람에게 몰아주면 세율 구간이 올라갑니다. 배우자 · 자녀 · 손자녀에게 나눠 주면 각자 공제를 받고 각자 낮은 구간에서 시작합니다.');
+  }
+  if(o.rel === 'linealAdult' && !o.marry && o.taxBase > 0){
+    tips.push('자녀가 혼인신고 전후 2년 안이거나 자녀 출산 후 2년 안이라면 혼인 · 출산 공제 1억원을 추가로 받습니다.');
+  }
+  if(o.rel === 'spouse' && o.taxBase > 0){
+    tips.push('배우자에게 준 재산은 나중에 배우자가 사망하면 2차 상속으로 다시 과세됩니다. 배우자 증여는 6억원 안에서 쓰는 것이 실익이 뚜렷하고, 그 이상은 상속세 계산기의 2차 상속까지 보기로 함께 검토하십시오.');
+  }
+  if(o.rel === 'spouse' || o.rel === 'linealAdult' || o.rel === 'linealMinor' || o.rel === 'descendant'){
+    tips.push('받은 부동산을 10년 안에 팔면 이월과세로 취득가액이 주는 사람의 당초 가액으로 되돌아가 양도세가 크게 늘어납니다. 부동산 증여는 10년 보유를 전제로 설계하십시오.');
+  }
+  tips.push('증여일이 속한 달의 말일부터 3개월 안에 신고하면 3%를 공제받습니다. 기한을 넘기면 공제가 사라지고 가산세가 붙습니다.');
+  if(tips.length) R.push({ h:'절세 포인트', p:tips.join(' '), tip:true });
+
+  return R;
 }
 
 /* ── 취득세 해설 ── */
