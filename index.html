@@ -454,9 +454,10 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .lc-gt em{font-style:normal;font-weight:400;font-size:10.5px;color:var(--ink-3);text-align:right}
 .lc-chart{position:relative;touch-action:pan-y;margin:0 -4px}
 .lc-chart svg{display:block;width:100%;font-family:inherit}
-.lc-tt{position:absolute;pointer-events:none;background:#12212E;color:#fff;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.5;white-space:nowrap;display:none;z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.18)}
-.lc-tt b{display:block;font-size:11.5px;margin-bottom:3px;color:#CFE6DD}
-.lc-tt table{border-collapse:collapse} .lc-tt td,.lc-tt th{padding:1px 6px;font-weight:400;text-align:right} .lc-tt th{color:#9FB3AA;font-size:10px;font-weight:400} .lc-tt td:first-child{text-align:left} .lc-tt td.m{opacity:.6} .lc-tt i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0}
+.lc-read{background:#12212E;color:#fff;border-radius:10px;padding:8px 12px 7px;font-size:11px;line-height:1.5;margin:4px 0 6px;min-height:34px}
+.lc-read .ph{color:#9FB3AA;font-size:11px;text-align:center;padding:4px 0}
+.lc-read b{display:block;font-size:11.5px;margin-bottom:3px;color:#CFE6DD}
+.lc-read table{border-collapse:collapse;width:100%} .lc-read td,.lc-read th{padding:1px 4px;font-weight:400;text-align:right;white-space:nowrap} .lc-read th{color:#9FB3AA;font-size:10px;font-weight:400} .lc-read td:first-child,.lc-read th:first-child{text-align:left;padding-left:0} .lc-read td.m{opacity:.6} .lc-read i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0}
 .lc-ann{font-size:11.5px;color:var(--ink-2);background:#fff;border:1px solid var(--rule-2);border-radius:10px;padding:8px 11px;margin:6px 0 4px;display:flex;gap:8px;align-items:flex-start;line-height:1.55}
 .lc-ann .k{flex:none;width:18px;height:18px;border-radius:50%;background:var(--pine-soft);color:var(--pine);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .report .rtab .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
@@ -5481,31 +5482,32 @@ function loanChartSVG(box, key){
   var guide = el('line', { x1:0, y1:T, x2:0, y2:H-B, stroke:'#12212E', 'stroke-width':1, 'stroke-dasharray':'3 3', opacity:0 }); svg.appendChild(guide);
   var dots = {}; LC_KEYS.forEach(function(k){ var c = el('circle', { r:4, fill:LC_COL[k], stroke:'#fff', 'stroke-width':1.5, opacity:0 }); svg.appendChild(c); dots[k] = c; });
   box.innerHTML = ''; box.appendChild(svg);
-  var tip = document.createElement('div'); tip.className = 'lc-tt'; box.appendChild(tip);
-  function place(i, withTip){
+  /* 값 읽기 패널 — 그래프를 가리지 않도록 아래에 둔다 */
+  var tip = box.nextElementSibling && box.nextElementSibling.className === 'lc-read' ? box.nextElementSibling : document.createElement('div');
+  tip.className = 'lc-read'; if(tip.parentNode !== box.parentNode) box.parentNode.insertBefore(tip, box.nextSibling);
+  tip.innerHTML = '<div class="ph">그래프를 누르거나 커서를 올리면 그 회차의 값이 여기에 표시됩니다</div>';
+  function place(i){
     var x = xs(i); guide.setAttribute('x1', x); guide.setAttribute('x2', x); guide.setAttribute('opacity', 1);
     LC_KEYS.forEach(function(k){ dots[k].setAttribute('cx', x); dots[k].setAttribute('cy', ys(Math.min(S[k][key][i], ymax))); dots[k].setAttribute('opacity', 1); });
-    if(!withTip){ tip.style.display = 'none'; return; }
     tip.textContent = ''; var b = document.createElement('b'); b.textContent = (i+1) + '회차 · ' + (Math.floor(i/12)+1) + '년차' + (i < D.grace ? ' · 거치' : ''); tip.appendChild(b);
     var tb = document.createElement('table'), hr = tb.insertRow(); ['', '월 납부액', '대출 잔액', '누적 이자'].forEach(function(h){ var th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
     LC_KEYS.forEach(function(k){ var row = tb.insertRow(); var c0 = row.insertCell(); var ki = document.createElement('i'); ki.style.background = LC_COL[k]; c0.appendChild(ki); c0.appendChild(document.createTextNode(k));
       var c1 = row.insertCell(); c1.textContent = comma(S[k].pay[i]) + '원'; c1.className = key === 'pay' ? '' : 'm';
       var c2 = row.insertCell(); c2.textContent = manWon(S[k].bal[i]); c2.className = key === 'bal' ? '' : 'm';
       var c3 = row.insertCell(); c3.textContent = manWon(S[k].cum[i]); c3.className = 'm'; });
-    tip.appendChild(tb); tip.style.display = 'block';
-    var rect = svg.getBoundingClientRect(), px = (x/W)*rect.width, tw = tip.offsetWidth;
-    tip.style.left = Math.max(0, Math.min(rect.width - tw, px > rect.width/2 ? px - tw - 12 : px + 12)) + 'px'; tip.style.top = '6px';
+    tip.appendChild(tb);
   }
-  function hide(){ guide.setAttribute('opacity', 0); LC_KEYS.forEach(function(k){ dots[k].setAttribute('opacity', 0); }); tip.style.display = 'none'; }
+  /* 손을 떼도 값은 남기고 안내선만 지운다 */
+  function hide(){ guide.setAttribute('opacity', 0); LC_KEYS.forEach(function(k){ dots[k].setAttribute('opacity', 0); }); }
   LC_CH.push({ place:place, hide:hide, box:box });
   function idx(cx){ var rc = svg.getBoundingClientRect(), fx = (cx - rc.left)/rc.width*W; return Math.max(0, Math.min(N-1, Math.round((fx-L)/pw*(N-1)))); }
-  function all(cx){ var i = idx(cx); LC_CH.forEach(function(c){ c.place(i, c.box === box); }); }
+  function all(cx){ var i = idx(cx); LC_CH.forEach(function(c){ c.place(i); }); }
   function allHide(){ LC_CH.forEach(function(c){ c.hide(); }); }
   box.addEventListener('mousemove', function(e){ all(e.clientX); });
-  box.addEventListener('mouseleave', allHide);
+  /* 손을 떼도 안내선과 값을 남겨 둔다 — 패널이 어느 회차 값인지 알 수 있도록 */
   box.addEventListener('touchstart', function(e){ all(e.touches[0].clientX); }, { passive:true });
   box.addEventListener('touchmove', function(e){ all(e.touches[0].clientX); }, { passive:true });
-  box.addEventListener('touchend', function(){ setTimeout(allHide, 1800); });
+  void allHide;
 }
 
 /* PDF · 이미지용 캔버스 그래프 — 범례 + 선 (팝업 없음) */
