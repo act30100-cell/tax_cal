@@ -273,6 +273,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
   font-size:13px;color:var(--ink-3);pointer-events:none;font-weight:400;
 }
 .unit input{padding-right:32px}
+.unit.wide input{padding-right:52px}   /* '개월' 처럼 두 글자 단위 */
 
 /* help button */
 .lrow .nm .help{
@@ -1937,7 +1938,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       </div>
       <div class="field">
         <label class="lb" for="lGrace">거치기간 <span style="font-weight:400;color:var(--ink-3)">이자만 내는 기간</span></label>
-        <div class="unit"><input type="text" id="lGrace" inputmode="numeric" placeholder="0"><span class="won">개월</span></div>
+        <div class="unit wide"><input type="text" id="lGrace" inputmode="numeric" placeholder="0"><span class="won">개월</span></div>
       </div>
       <div class="field" style="margin-bottom:0">
         <label class="lb">상환방식 <button class="help" id="lTypeHelp" type="button" aria-label="상환방식 설명">?</button></label>
@@ -1948,9 +1949,8 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
           <button type="button" data-v="bullet" aria-pressed="false">만기일시<small>이자만 내다가</small></button>
         </div>
         <div id="lStepWrap" style="display:none;margin-top:12px">
-          <label class="lb" for="lStep">연 증가율 <span style="font-weight:400;color:var(--ink-3)">매년 상환액이 오르는 비율</span></label>
-          <div class="unit"><input type="text" id="lStep" inputmode="decimal" placeholder="3"><span class="won">%</span></div>
-          <div class="hint" id="lStepK"></div>
+          <div class="info">체증식은 은행이 증가 폭을 정합니다. 주택금융공사 · 은행권 방식대로 <b>첫 회는 이자만 내고 이후 매월 일정액씩 납부액이 늘어나</b> 만기에 원금이 소진되도록 계산합니다. 정확한 상환표는 취급 은행 안내를 확인하십시오.</div>
+          <input type="hidden" id="lStep">
         </div>
       </div>
     </div>
@@ -2841,7 +2841,7 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
       <h4>원금균등상환</h4>
       <p>원금을 기간으로 나눠 매달 같은 금액씩 갚고, 이자는 남은 원금에만 붙습니다. 원금이 빨리 줄어 <b>총 이자가 가장 적지만</b> 첫 회차 부담이 가장 큽니다. 초기 상환 여력이 있고 오래 보유할 계획이면 유리합니다.</p>
       <h4>체증식 상환</h4>
-      <p>첫 해 상환액이 가장 적고 해마다 정해진 비율로 올라갑니다. 예를 들어 연 3%씩 늘리면 30년 뒤 마지막 해 상환액은 첫 해의 약 2.4배가 됩니다.</p>
+      <p>첫 회는 이자만 내고, 이후 <b>매월 일정한 금액씩</b> 납부액이 늘어나 만기에 원금이 다 갚아지도록 짭니다. 증가액은 은행이 정하는 것이라 고객이 고를 수 없습니다. 5억원 · 5% · 30년이면 첫 회 208만원에서 매월 약 4,400원씩 늘어 마지막 회 367만원이 됩니다. 주택금융공사 보금자리론과 은행권 체증식이 이 방식입니다.</p>
       <p>지금 소득으로는 원리금균등이 벅차지만 <b>앞으로 소득이 오를 것</b>으로 보이는 경우에 씁니다. 초기 원금이 천천히 줄어드는 만큼 총 이자는 원리금균등보다 많습니다.</p>
       <div class="callout"><p><b>말년 부담을 반드시 확인하십시오.</b> 상환 후반부의 월 납입액이 그때의 예상 소득으로 감당 가능한지가 관건입니다. 은퇴 시점과 만기가 겹치면 위험합니다.</p></div>
 
@@ -5269,25 +5269,28 @@ function lRun(){
     totalInterest = Math.round(interestSum) + graceInterest;
   } else if(lType === 'step'){
     label = '체증식 상환';
-    var g = (parseFloat(($('lStep').value || '3').replace(/[^\d.]/g,'')) || 0) / 100;
-    var years = Math.ceil(payN / 12);
-    var a12 = r > 0 ? (1 - Math.pow(1+r, -12)) / r : 12;
-    var pv = 0;
-    for(var y=0; y<years; y++){
-      var months = Math.min(12, payN - y*12);
-      var af = r > 0 ? (1 - Math.pow(1+r, -months)) / r : months;
-      pv += Math.pow(1+g, y) * af / Math.pow(1+r, y*12);
+    /* 주택금융공사 · 은행권 방식 : 첫 회는 이자만 내고, 이후 매월 일정액씩 납부액이 늘어난다.
+       만기에 잔액이 0이 되는 월 증가액을 이분법으로 찾는다. */
+    var flatPay = r > 0 ? P * r / (1 - Math.pow(1+r, -payN)) : P / payN;   // 원리금균등 월 상환액
+    function stepSim(d){
+      var bal = P, it = 0;
+      for(var k = 0; k < payN; k++){
+        var pay = P * r + d * k;
+        var i2 = bal * r;
+        it += i2; bal -= (pay - i2);
+      }
+      return { bal:bal, interest:it };
     }
-    var A = pv > 0 ? P / pv : P / payN;
-    first = Math.round(A);
-    last  = Math.round(A * Math.pow(1+g, years-1));
-    var paidSum = 0;
-    for(var y2=0; y2<years; y2++){
-      var m2 = Math.min(12, payN - y2*12);
-      paidSum += A * Math.pow(1+g, y2) * m2;
+    var lo = 0, hi = P / payN * 2, dStep = 0;
+    for(var b = 0; b < 60; b++){
+      var mid = (lo + hi) / 2;
+      if(stepSim(mid).bal > 0) lo = mid; else hi = mid;
     }
-    totalInterest = Math.round(paidSum - P) + graceInterest;
-    stepInfo = { rate:g, years:years, first:first, last:last };
+    dStep = lo;
+    first = Math.round(P * r);
+    last  = Math.round(P * r + dStep * (payN - 1));
+    totalInterest = Math.round(stepSim(dStep).interest) + graceInterest;
+    stepInfo = { d:dStep, first:first, last:last, flat:flatPay, years:Math.ceil(payN/12) };
   } else {
     label = '만기일시상환';
     first = last = Math.round(P * r);
@@ -5304,8 +5307,9 @@ function lRun(){
     rows.push(['','','첫 회차 상환액','원금 ' + comma(Math.round(P/payN)) + '원 + 이자', won(first), 'sum']);
     rows.push(['','','마지막 회차 상환액','', won(last), 'sum']);
   } else if(lType === 'step'){
-    rows.push(['','','첫 해 월 상환액','1년차 · 가장 적음', won(first), 'sum']);
-    rows.push(['','','마지막 해 월 상환액', stepInfo.years + '년차 · 연 ' + (Math.round(stepInfo.rate*1000)/10) + '%씩 증가', won(last), 'sum']);
+    rows.push(['','','첫 회차 상환액','이자만 · 원리금균등보다 ' + comma(Math.round(stepInfo.flat - first)) + '원 적음', won(first), 'sum']);
+    rows.push(['','','매월 증가액','회차마다 이만큼씩 늘어남', won(Math.round(stepInfo.d))]);
+    rows.push(['','','마지막 회차 상환액', payN + '회차 · 첫 회의 ' + (Math.round(last/first*100)/100) + '배', won(last), 'sum']);
   } else if(lType === 'bullet'){
     rows.push(['','','매월 상환액','이자만 납부', won(first), 'sum']);
     rows.push(['','','만기 상환 원금','', won(P), 'sum']);
@@ -5322,7 +5326,7 @@ function lRun(){
   if(lType === 'equal') notes.push('매달 갚는 금액이 같아 계획을 세우기 쉽습니다. 초기에는 이자 비중이 크고 갈수록 원금 비중이 커집니다.');
   if(lType === 'principal') notes.push('원금을 매달 같은 금액씩 갚아 이자가 계속 줄어듭니다. 총 이자는 가장 적지만 <b>초기 부담이 가장 큽니다.</b>');
   if(lType === 'step') notes.push('처음에는 적게 내고 해마다 정해진 비율로 상환액이 늘어납니다. 소득이 오를 것으로 보이는 사회 초년생이나, 당장의 현금흐름이 빠듯한 경우에 씁니다. 초기 원금이 천천히 줄어 <b>총 이자는 원리금균등보다 많습니다.</b>');
-  if(lType === 'step') notes.push('마지막 해 상환액이 첫 해의 <b>' + (Math.round(last/first*100)/100) + '배</b>가 됩니다. 그때의 소득으로 감당 가능한지 미리 확인하십시오.');
+  if(lType === 'step') notes.push('마지막 회차 상환액이 첫 회의 <b>' + (Math.round(last/first*100)/100) + '배</b>가 됩니다. 그때의 소득으로 감당 가능한지 미리 확인하십시오. 첫 회가 원리금균등보다 적은 만큼 원금이 늦게 줄어 총 이자는 더 많습니다.');
   if(lType === 'bullet') notes.push('매달 이자만 내다가 만기에 원금 전액을 갚습니다. 총 이자가 가장 많으므로 만기 상환 재원이 확실할 때만 선택하십시오.');
   if(grace) notes.push('거치기간에는 원금을 갚지 않아 그만큼 이자가 늘어납니다. 이 계산에는 거치기간 이자 ' + comma(graceInterest) + '원이 포함돼 있습니다.');
   notes.push('중도상환수수료, 인지세, 근저당 설정비용, 변동금리 변동분은 반영하지 않은 단순 계산입니다.');
