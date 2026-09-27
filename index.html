@@ -447,6 +447,22 @@ select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns=
 .rtab th,.rtab td{padding:5px 8px;border-bottom:1px solid var(--rule-2);text-align:center}
 .rtab th{background:var(--pine-soft);color:var(--pine);font-weight:800;font-size:11px}
 .rtab td:first-child{text-align:left}
+/* 대출 해설 — 상환방식 비교 그래프 */
+.lc-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);margin:8px 0 4px}
+.lc-legend span{display:flex;align-items:center;gap:5px} .lc-legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.lc-gt{font-size:11.5px;font-weight:800;margin:10px 0 2px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;color:var(--ink)}
+.lc-gt em{font-style:normal;font-weight:400;font-size:10.5px;color:var(--ink-3);text-align:right}
+.lc-chart{position:relative;touch-action:pan-y;margin:0 -4px}
+.lc-chart svg{display:block;width:100%;font-family:inherit}
+.lc-tt{position:absolute;pointer-events:none;background:#12212E;color:#fff;border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.5;white-space:nowrap;display:none;z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.lc-tt b{display:block;font-size:11.5px;margin-bottom:3px;color:#CFE6DD}
+.lc-tt table{border-collapse:collapse} .lc-tt td,.lc-tt th{padding:1px 6px;font-weight:400;text-align:right} .lc-tt th{color:#9FB3AA;font-size:10px;font-weight:400} .lc-tt td:first-child{text-align:left} .lc-tt td.m{opacity:.6} .lc-tt i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:0}
+.lc-ann{font-size:11.5px;color:var(--ink-2);background:#fff;border:1px solid var(--rule-2);border-radius:10px;padding:8px 11px;margin:6px 0 4px;display:flex;gap:8px;align-items:flex-start;line-height:1.55}
+.lc-ann .k{flex:none;width:18px;height:18px;border-radius:50%;background:var(--pine-soft);color:var(--pine);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.report .rtab .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.report .rtab small{font-size:10px;color:var(--flag);font-weight:400;margin-left:4px}
+.report .rtab.lc td,.report .rtab.lc th{white-space:nowrap;text-align:right} .report .rtab.lc td:first-child,.report .rtab.lc th:first-child{text-align:left}
+.report .rs p.lc-note{font-size:11px;color:var(--ink-3);margin-top:6px}
 .rtab tr.hi td{background:#FFF4E9;color:var(--flag);font-weight:800}
 .report .rs.tip h5{color:var(--pine)}
 .foot{padding:13px 16px;background:#FBFCFA;border-top:1px solid var(--rule-2);font-size:11.5px;color:var(--ink-3);line-height:1.65}
@@ -5320,7 +5336,7 @@ function lRun(){
 
   if(lType === 'equal') notes.push('매달 갚는 금액이 같아 계획을 세우기 쉽습니다. 초기에는 이자 비중이 크고 갈수록 원금 비중이 커집니다.');
   if(lType === 'principal') notes.push('원금을 매달 같은 금액씩 갚아 이자가 계속 줄어듭니다. 총 이자는 가장 적지만 <b>초기 부담이 가장 큽니다.</b>');
-  if(lType === 'step') notes.push('처음에는 적게 내고 해마다 정해진 비율로 상환액이 늘어납니다. 소득이 오를 것으로 보이는 사회 초년생이나, 당장의 현금흐름이 빠듯한 경우에 씁니다. 초기 원금이 천천히 줄어 <b>총 이자는 원리금균등보다 많습니다.</b>');
+  if(lType === 'step') notes.push('처음에는 이자만 내고 매달 일정액씩 상환액이 늘어납니다. 소득이 오를 것으로 보이는 사회 초년생이나, 당장의 현금흐름이 빠듯한 경우에 씁니다. 초기 원금이 천천히 줄어 <b>총 이자는 원리금균등보다 많습니다.</b>');
   if(lType === 'step') notes.push('마지막 회차 상환액이 첫 회의 <b>' + (Math.round(last/first*100)/100) + '배</b>가 됩니다. 그때의 소득으로 감당 가능한지 미리 확인하십시오. 첫 회가 원리금균등보다 적은 만큼 원금이 늦게 줄어 총 이자는 더 많습니다.');
   if(lType === 'bullet') notes.push('매달 이자만 내다가 만기에 원금 전액을 갚습니다. 총 이자가 가장 많으므로 만기 상환 재원이 확실할 때만 선택하십시오.');
   if(grace) notes.push('거치기간에는 원금을 갚지 않아 그만큼 이자가 늘어납니다. 이 계산에는 거치기간 이자 ' + comma(graceInterest) + '원이 포함돼 있습니다.');
@@ -5360,9 +5376,160 @@ function lRun(){
   })();
   L_SCHED = sched;
 
-  renderLedger(L_IDS, { rows:rows, badges:badges, notes:notes,
+  /* ── 상환방식 비교(해설용) ── */
+  var selKey = { equal:'원리금균등', principal:'원금균등', step:'체증식', bullet:'만기일시' }[lType];
+  LC_DATA = buildLoanCompare(P, r, n, grace, selKey);
+  var report = loanReport({ P:P, rate:rate, years:years, grace:grace, n:n, label:label, first:first, sel:selKey });
+
+  renderLedger(L_IDS, { rows:rows, badges:badges, notes:notes, report:report,
     krw: korean(totalPay), title:'대출 상환 계획', slug:'loan-plan' });
+  renderLoanCharts();
   renderSchedule();
+}
+
+/* ================= 상환방식 비교 (해설) ================= */
+var LC_KEYS = ['원리금균등','원금균등','체증식','만기일시'];
+var LC_COL = { '원리금균등':'#1B6B5A', '원금균등':'#1E6FD9', '체증식':'#E0561B', '만기일시':'#8A94A0' };
+var LC_CANVAS_H = { pay:330, bal:280 };
+var LC_DATA = null, LC_CH = [];
+function manWon(n){ n = Math.round(n/10000); var e = Math.floor(n/10000), r = n%10000; return ((e ? e+'억 ' : '') + (r || !e ? r.toLocaleString('ko-KR')+'만' : '')).trim(); }
+
+/* 같은 원금 · 이율 · 기간 · 거치로 네 방식의 회차별 납부액 · 잔액 · 누적이자를 만든다 */
+function buildLoanCompare(P, r, n, grace, sel){
+  var payN = n - grace, S = {};
+  function run(payFn){
+    var pay = [], bal = [], cum = [], b = P, c = 0, k;
+    for(k = 0; k < grace; k++){ var gi = P*r; c += gi; pay.push(gi); bal.push(b); cum.push(c); }
+    for(k = 0; k < payN; k++){
+      var i = b*r, p = payFn(k, b, i); if(k === payN-1) p = b;
+      b -= p; c += i; pay.push(p + i); bal.push(Math.max(0, b)); cum.push(c);
+    }
+    return { pay:pay, bal:bal, cum:cum, first:pay[grace], last:pay[n-1], interest:c };
+  }
+  var pm = r > 0 ? P*r/(1 - Math.pow(1+r, -payN)) : P/payN;
+  S['원리금균등'] = run(function(k, b, i){ return pm - i; });
+  var pp = P/payN;
+  S['원금균등'] = run(function(k, b, i){ return pp; });
+  function stepSim2(dd){ var bal = P; for(var k = 0; k < payN; k++){ var i2 = bal*r; bal -= (P*r + dd*k - i2); } return bal; }
+  var lo = 0, hi = P/payN*2; for(var q = 0; q < 60; q++){ var mid = (lo+hi)/2; if(stepSim2(mid) > 0) lo = mid; else hi = mid; }
+  S['체증식'] = run(function(k, b, i){ return P*r + lo*k - i; });
+  S['만기일시'] = run(function(k, b, i){ return 0; });
+  /* 교차 시점 — 선택 방식 기준으로 다른 방식의 부담이 뒤집히는 회차 */
+  var ann = '';
+  if(sel !== '만기일시'){
+    var sp = S[sel].pay, hit = [];
+    LC_KEYS.forEach(function(k){ if(k === sel || k === '만기일시') return; var p = S[k].pay, sign = p[grace] > sp[grace];
+      for(var i = grace+1; i < n; i++){ if((p[i] > sp[i]) !== sign){ hit.push(k + '은 ' + (i+1) + '회차(' + (Math.floor(i/12)+1) + '년차)부터 ' + sel + '보다 ' + (sign ? '적게' : '많이') + ' 냅니다'); break; } } });
+    if(hit.length) ann = hit.join(' · ') + '. 선이 만나는 지점이 부담이 뒤집히는 순간입니다.';
+  }
+  return { P:P, n:n, grace:grace, sel:sel, S:S, ann:ann };
+}
+
+function loanReport(o){
+  var D = LC_DATA, S = D.S, R = [];
+  var sel = o.sel, s = S[sel];
+  R.push({ h:'이 사례는', p: manWon(o.P) + '원을 연 ' + o.rate + '%로 ' + o.years + '년 동안 ' + o.label + '으로 갚는 경우' + (o.grace ? ' (거치 ' + o.grace + '개월 포함)' : '') + '. '
+    + (sel === '원리금균등' ? '매달 ' + comma(s.first) + '원씩 ' + o.n + '회.' : sel === '만기일시' ? '매달 이자 ' + comma(s.first) + '원을 내고 만기에 원금 ' + manWon(o.P) + '원을 갚습니다.' : '첫 회 ' + comma(s.first) + '원에서 마지막 회 ' + comma(s.last) + '원까지 ' + (sel === '원금균등' ? '줄어듭니다.' : '늘어납니다.')) });
+  R.push({ h:'같은 조건에서 상환방식만 바꾸면', chart:'pay', ann:D.ann,
+    p:'같은 돈을 같은 기간 빌려도 <b>갚는 순서</b>에 따라 매달 내는 돈의 모양과 총이자가 달라집니다. 초기 부담이 가벼울수록 원금이 늦게 줄어 총이자는 늘어납니다. 초기 부담과 총이자는 <b>정반대로 움직입니다.</b>' });
+  var rows = LC_KEYS.map(function(k){ var d = S[k]; return ['<span class="dot" style="background:' + LC_COL[k] + '"></span>' + k + (k === sel ? ' <small>지금 선택</small>' : ''), manWon(d.first), manWon(d.last), manWon(d.interest)]; });
+  R.push({ h:'대출 잔액 추이', chart:'bal',
+    p:'잔액이 늦게 줄수록 이자가 오래 쌓입니다. 원금균등은 첫 달부터 원금을 같은 크기로 갚아 잔액이 직선으로 줄고, 원리금균등은 초반에 이자 비중이 커서 천천히 줄다가 후반에 빨라집니다. 체증식은 그보다 더 늦고, 만기일시는 끝까지 그대로입니다.',
+    table:{ cols:['방식','첫 회','마지막 회','총이자'], rows:rows, hi:[LC_KEYS.indexOf(sel)], cls:'lc' },
+    after:'만원 단위' + (o.grace ? ' · 네 방식 모두 거치 ' + o.grace + '개월을 똑같이 적용' : '') + ' · 만기일시는 원금을 갚지 않고 이자만 내는 방식이라 총이자가 가장 크지만, 매각이나 전세보증금 회수처럼 만기 상환 재원이 정해진 경우에 쓰는 것이어서 다른 셋과 같은 잣대로 비교할 대상은 아닙니다.' });
+  var g = S['원금균등'], e = S['원리금균등'], z = S['체증식'], tip = '';
+  if(sel === '원리금균등') tip = '원금균등으로 바꾸면 총이자가 ' + manWon(e.interest - g.interest) + '원 줄지만 첫 회 부담이 ' + manWon(g.first - e.first) + '원 늘어납니다. 지금 소득으로 ' + manWon(g.first) + '원을 감당할 수 있다면 원금균등이 유리하고, 몇 년 뒤 소득이 오를 예정이면 체증식(첫 회 ' + manWon(z.first) + '원)으로 초기를 버티는 방법도 있습니다. 다만 체증식은 총이자가 ' + manWon(z.interest - e.interest) + '원 더 들고 마지막 회에는 ' + manWon(z.last) + '원까지 오릅니다.';
+  else if(sel === '원금균등') tip = '총이자가 가장 적은 방식입니다. 대신 첫 회 ' + manWon(g.first) + '원은 원리금균등보다 ' + manWon(g.first - e.first) + '원 많습니다. 초기 부담이 버거우면 원리금균등으로 바꿔 매달 ' + manWon(e.first) + '원으로 고정할 수 있지만 총이자는 ' + manWon(e.interest - g.interest) + '원 늘어납니다.';
+  else if(sel === '체증식') tip = '첫 회 ' + manWon(z.first) + '원으로 시작해 마지막 회 ' + manWon(z.last) + '원까지 오릅니다. 초기 부담은 가장 가볍지만 총이자는 원리금균등보다 ' + manWon(z.interest - e.interest) + '원, 원금균등보다 ' + manWon(z.interest - g.interest) + '원 많습니다. 소득이 늘어날 것이 확실할 때 쓰고, 여유가 생기면 중도상환으로 원금을 앞당겨 갚는 것이 좋습니다.';
+  else tip = '이자만 내는 동안은 매달 ' + manWon(s.first) + '원으로 가장 가볍지만 원금이 한 푼도 줄지 않아 총이자가 원리금균등보다 ' + manWon(s.interest - e.interest) + '원 많습니다. 만기에 ' + manWon(o.P) + '원을 갚을 재원(매각 · 보증금 회수 · 만기 자금)이 확실할 때만 고르십시오.';
+  R.push({ h:'선택 포인트', tip:true, p:tip });
+  return R;
+}
+
+/* 화면 SVG 그래프 — 두 그래프의 안내선이 같은 회차로 움직인다 */
+function renderLoanCharts(){
+  LC_CH = [];
+  var boxes = document.querySelectorAll('#lFoot .lc-chart');
+  if(!boxes.length || !LC_DATA) return;
+  Array.prototype.forEach.call(boxes, function(box){ loanChartSVG(box, box.getAttribute('data-key')); });
+}
+function lcScale(key){
+  var D = LC_DATA, S = D.S, N = D.n;
+  var mx = 0; if(key === 'bal') mx = D.P; else LC_KEYS.forEach(function(k){ var p = S[k].pay; for(var i = 0; i < N-1; i++) if(p[i] > mx) mx = p[i]; if(k !== '만기일시' && p[N-1] > mx) mx = p[N-1]; });
+  var mag = Math.pow(10, Math.floor(Math.log10(mx))), ratio = mx/mag, step = ratio < 1.5 ? mag/4 : ratio < 3 ? mag/2 : mag;
+  if(key === 'bal') return { ymax:mx, step:step };
+  var ymax = Math.ceil(mx/step)*step; if(ymax === mx) ymax += step;
+  return { ymax:ymax, step:step };
+}
+function lcFmt(v){ if(!v) return '0'; return v >= 100000000 ? (Math.round(v/10000000)/10) + '억' : (v/10000).toLocaleString('ko-KR') + '만'; }
+function lcYearMarks(N){ var yrs = Math.ceil(N/12), m = [1]; [5,10,15,20,25,30,35,40].forEach(function(y){ if(y < yrs) m.push(y); }); if(m.indexOf(yrs) < 0 && yrs > 1) m.push(yrs); return m; }
+function loanChartSVG(box, key){
+  var D = LC_DATA, S = D.S, N = D.n, NS = 'http://www.w3.org/2000/svg';
+  var sc = lcScale(key), ymax = sc.ymax, clip = (key === 'pay');
+  var W = 680, H = key === 'pay' ? 250 : 210, L = 56, R = 16, T = 18, B = 34, pw = W-L-R, ph = H-T-B;
+  function el(t, a){ var e = document.createElementNS(NS, t); for(var k in a) e.setAttribute(k, a[k]); return e; }
+  var xs = function(i){ return N > 1 ? L + pw*i/(N-1) : L; }, ys = function(v){ return T + ph*(1 - v/ymax); };
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H });
+  for(var g = 0; g <= ymax + 1; g += sc.step){ var y = ys(g); svg.appendChild(el('line', { x1:L, y1:y, x2:W-R, y2:y, stroke:'#E8ECE9' }));
+    var t = el('text', { x:L-6, y:y+4, 'font-size':10, fill:'#78868F', 'text-anchor':'end' }); t.textContent = lcFmt(g); svg.appendChild(t); }
+  lcYearMarks(N).forEach(function(yr){ var t = el('text', { x:xs(Math.min(yr*12, N)-1), y:H-12, 'font-size':10, fill:'#78868F', 'text-anchor':'middle' }); t.textContent = yr + '년'; svg.appendChild(t); });
+  LC_KEYS.forEach(function(k){ var v = S[k][key], d = '';
+    for(var i = 0; i < N; i++){ if(clip && k === '만기일시' && i === N-1) break; d += (i ? ' L' : 'M') + xs(i).toFixed(1) + ',' + ys(Math.min(v[i], ymax)).toFixed(1); }
+    svg.appendChild(el('path', { d:d, fill:'none', stroke:LC_COL[k], 'stroke-width':k === D.sel ? 3 : 1.8, 'stroke-dasharray':k === '만기일시' ? '4 3' : 'none', 'stroke-linejoin':'round' })); });
+  if(clip){ var x = xs(N-1); svg.appendChild(el('line', { x1:x, y1:ys(Math.min(S['만기일시'].pay[N-2], ymax)), x2:x, y2:T, stroke:LC_COL['만기일시'], 'stroke-width':1.6, 'stroke-dasharray':'3 3' }));
+    var t2 = el('text', { x:x-4, y:T+10, 'font-size':9.5, fill:LC_COL['만기일시'], 'text-anchor':'end' }); t2.textContent = '만기 원금 ' + manWon(D.P) + ' ↑'; svg.appendChild(t2); }
+  var guide = el('line', { x1:0, y1:T, x2:0, y2:H-B, stroke:'#12212E', 'stroke-width':1, 'stroke-dasharray':'3 3', opacity:0 }); svg.appendChild(guide);
+  var dots = {}; LC_KEYS.forEach(function(k){ var c = el('circle', { r:4, fill:LC_COL[k], stroke:'#fff', 'stroke-width':1.5, opacity:0 }); svg.appendChild(c); dots[k] = c; });
+  box.innerHTML = ''; box.appendChild(svg);
+  var tip = document.createElement('div'); tip.className = 'lc-tt'; box.appendChild(tip);
+  function place(i, withTip){
+    var x = xs(i); guide.setAttribute('x1', x); guide.setAttribute('x2', x); guide.setAttribute('opacity', 1);
+    LC_KEYS.forEach(function(k){ dots[k].setAttribute('cx', x); dots[k].setAttribute('cy', ys(Math.min(S[k][key][i], ymax))); dots[k].setAttribute('opacity', 1); });
+    if(!withTip){ tip.style.display = 'none'; return; }
+    tip.textContent = ''; var b = document.createElement('b'); b.textContent = (i+1) + '회차 · ' + (Math.floor(i/12)+1) + '년차' + (i < D.grace ? ' · 거치' : ''); tip.appendChild(b);
+    var tb = document.createElement('table'), hr = tb.insertRow(); ['', '월 납부액', '대출 잔액', '누적 이자'].forEach(function(h){ var th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
+    LC_KEYS.forEach(function(k){ var row = tb.insertRow(); var c0 = row.insertCell(); var ki = document.createElement('i'); ki.style.background = LC_COL[k]; c0.appendChild(ki); c0.appendChild(document.createTextNode(k));
+      var c1 = row.insertCell(); c1.textContent = comma(S[k].pay[i]) + '원'; c1.className = key === 'pay' ? '' : 'm';
+      var c2 = row.insertCell(); c2.textContent = manWon(S[k].bal[i]); c2.className = key === 'bal' ? '' : 'm';
+      var c3 = row.insertCell(); c3.textContent = manWon(S[k].cum[i]); c3.className = 'm'; });
+    tip.appendChild(tb); tip.style.display = 'block';
+    var rect = svg.getBoundingClientRect(), px = (x/W)*rect.width, tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(rect.width - tw, px > rect.width/2 ? px - tw - 12 : px + 12)) + 'px'; tip.style.top = '6px';
+  }
+  function hide(){ guide.setAttribute('opacity', 0); LC_KEYS.forEach(function(k){ dots[k].setAttribute('opacity', 0); }); tip.style.display = 'none'; }
+  LC_CH.push({ place:place, hide:hide, box:box });
+  function idx(cx){ var rc = svg.getBoundingClientRect(), fx = (cx - rc.left)/rc.width*W; return Math.max(0, Math.min(N-1, Math.round((fx-L)/pw*(N-1)))); }
+  function all(cx){ var i = idx(cx); LC_CH.forEach(function(c){ c.place(i, c.box === box); }); }
+  function allHide(){ LC_CH.forEach(function(c){ c.hide(); }); }
+  box.addEventListener('mousemove', function(e){ all(e.clientX); });
+  box.addEventListener('mouseleave', allHide);
+  box.addEventListener('touchstart', function(e){ all(e.touches[0].clientX); }, { passive:true });
+  box.addEventListener('touchmove', function(e){ all(e.touches[0].clientX); }, { passive:true });
+  box.addEventListener('touchend', function(){ setTimeout(allHide, 1800); });
+}
+
+/* PDF · 이미지용 캔버스 그래프 — 범례 + 선 (팝업 없음) */
+function drawLoanChartCanvas(c, key, x0, y0, w){
+  var D = LC_DATA, S = D.S, N = D.n, sc = lcScale(key), ymax = sc.ymax, clip = (key === 'pay');
+  var LH = 30, H = LC_CANVAS_H[key] - LH, L = 90, R = 24, T = 18, B = 40, pw = w-L-R, ph = H-T-B;
+  var yy = y0;
+  /* 범례 */
+  c.font = '400 18px '+RD; c.textAlign = 'left'; var lx = x0;
+  LC_KEYS.forEach(function(k){ c.fillStyle = LC_COL[k]; c.fillRect(lx, yy + 9, 22, 4); lx += 28; c.fillStyle = '#41525F'; c.fillText(k, lx, yy + 18); lx += c.measureText(k).width + 22; });
+  yy += LH;
+  var xs = function(i){ return N > 1 ? x0 + L + pw*i/(N-1) : x0 + L; }, ys = function(v){ return yy + T + ph*(1 - v/ymax); };
+  c.font = '400 16px '+RD;
+  for(var g = 0; g <= ymax + 1; g += sc.step){ var y = ys(g); c.fillStyle = '#E8ECE9'; c.fillRect(x0 + L, y, pw, 1); c.fillStyle = '#78868F'; c.textAlign = 'right'; c.fillText(lcFmt(g), x0 + L - 10, y + 6); }
+  c.textAlign = 'center';
+  lcYearMarks(N).forEach(function(yr){ c.fillText(yr + '년', xs(Math.min(yr*12, N)-1), yy + H - 12); });
+  c.lineJoin = 'round';
+  LC_KEYS.forEach(function(k){ var v = S[k][key]; c.beginPath(); c.strokeStyle = LC_COL[k]; c.lineWidth = k === D.sel ? 4 : 2.4; c.setLineDash(k === '만기일시' ? [6,5] : []);
+    for(var i = 0; i < N; i++){ if(clip && k === '만기일시' && i === N-1) break; var px = xs(i), py = ys(Math.min(v[i], ymax)); if(i) c.lineTo(px, py); else c.moveTo(px, py); }
+    c.stroke(); });
+  if(clip){ var xe = xs(N-1); c.beginPath(); c.strokeStyle = LC_COL['만기일시']; c.lineWidth = 2; c.setLineDash([4,4]); c.moveTo(xe, ys(Math.min(S['만기일시'].pay[N-2], ymax))); c.lineTo(xe, yy + T); c.stroke();
+    c.fillStyle = LC_COL['만기일시']; c.textAlign = 'right'; c.font = '400 15px '+RD; c.fillText('만기 원금 ' + manWon(D.P) + ' ↑', xe - 6, yy + T + 14); }
+  c.setLineDash([]); c.textAlign = 'left';
+  return yy + H;
 }
 
 var L_SCHED = [];
@@ -5980,6 +6147,15 @@ function drawReportSection(c, r, PAD, CW, yy){
       yy += 36;
       c.fillStyle = '#41525F'; c.font = '400 21px '+RD;
       r.lines.forEach(function(line){ c.fillText(line, PAD + (r.tip ? 18 : 0), yy + 18); yy += 32; });
+      if(r.chart && LC_DATA){ yy = drawLoanChartCanvas(c, r.chart, PAD, yy + 6, CW) + 10; }
+      if(r.annLines){
+        var ah = r.annLines.length*30 + 22;
+        c.fillStyle = '#F4F7F5'; c.fillRect(PAD, yy, CW, ah);
+        c.fillStyle = '#1B6B5A'; c.fillRect(PAD, yy, 4, ah);
+        c.fillStyle = '#41525F'; c.font = '400 20px '+RD;
+        r.annLines.forEach(function(line, i){ c.fillText(line, PAD + 20, yy + 30 + i*30); });
+        yy += ah + 12;
+      }
       if(r.table){
         var tx = PAD + (r.tip ? 18 : 0), tw = CW - (r.tip ? 18 : 0), n = r.table.cols.length;
         var cw0 = Math.floor(tw * 0.34), cwx = Math.floor((tw - cw0) / Math.max(1, n - 1));
@@ -6008,11 +6184,13 @@ function drawReportSection(c, r, PAD, CW, yy){
         c.textAlign = 'left';
         yy += 6;
       }
+      if(r.afterLines){ c.fillStyle = '#78868F'; c.font = '400 18px '+RD; r.afterLines.forEach(function(line){ c.fillText(line, PAD, yy + 18); yy += 26; }); yy += 4; }
       yy += 22;
       return yy;
 }
 function sectionHeight(r){
-  return 36 + r.lines.length*32 + (r.table ? (r.table.rows.length + 1) * 34 + 14 : 0) + 22;
+  return 36 + r.lines.length*32 + (r.table ? (r.table.rows.length + 1) * 34 + 14 : 0) + 22
+    + (r.chart ? LC_CANVAS_H[r.chart] + 16 : 0) + (r.annLines ? r.annLines.length*30 + 34 : 0) + (r.afterLines ? r.afterLines.length*26 + 4 : 0);
 }
 function drawFooter(c, W, H, PAD, CW, pageNo){
   var yy = H - 30;
@@ -6030,7 +6208,10 @@ function drawReportPages(stamp, startPage){
   var probe = document.createElement('canvas').getContext('2d');
   probe.font = '400 21px '+RD;
   var items = RPT.report.map(function(r){
-    return { h:r.h, lines:wrapLines(probe, stripTags(r.p), CW - 24), tip:!!r.tip, table:r.table };
+    var it = { h:r.h, lines:wrapLines(probe, stripTags(r.p), CW - 24), tip:!!r.tip, table:r.table, chart:r.chart };
+    if(r.ann){ probe.font = '400 20px '+RD; it.annLines = wrapLines(probe, stripTags(r.ann), CW - 40); probe.font = '400 21px '+RD; }
+    if(r.after){ probe.font = '400 18px '+RD; it.afterLines = wrapLines(probe, stripTags(r.after), CW); probe.font = '400 21px '+RD; }
+    return it;
   });
   var pages = [], cur = null, c = null, yy = 0, pageNo = startPage || 2;
   function newPage(){
@@ -6472,13 +6653,20 @@ function reportHTML(report){
   var h = '<div class="report"><div class="rt">해설</div>';
   report.forEach(function(r){
     h += '<div class="rs' + (r.tip ? ' tip' : '') + '"><h5>' + r.h + '</h5><p>' + r.p + '</p>';
+    if(r.chart){
+      if(r.chart === 'pay') h += '<div class="lc-legend">' + LC_KEYS.map(function(k){ return '<span><i style="background:' + LC_COL[k] + '"></i>' + k + '</span>'; }).join('') + '</div>';
+      h += '<div class="lc-gt">' + (r.chart === 'pay' ? '월 납부액 추이<em>누르거나 커서를 올리면 회차 값이 보입니다</em>' : '대출 잔액 추이<em>위 그래프와 같은 회차가 함께 표시됩니다</em>') + '</div>';
+      h += '<div class="lc-chart" data-key="' + r.chart + '"></div>';
+    }
+    if(r.ann) h += '<div class="lc-ann"><span class="k">!</span><span>' + r.ann + '</span></div>';
     if(r.table){
-      h += '<table class="rtab"><tr>' + r.table.cols.map(function(c){ return '<th>' + c + '</th>'; }).join('') + '</tr>';
+      h += '<table class="rtab' + (r.table.cls ? ' ' + r.table.cls : '') + '"><tr>' + r.table.cols.map(function(c){ return '<th>' + c + '</th>'; }).join('') + '</tr>';
       r.table.rows.forEach(function(row, i){
         h += '<tr' + ((r.table.hi || []).indexOf(i) >= 0 ? ' class="hi"' : '') + '>' + row.map(function(c){ return '<td>' + c + '</td>'; }).join('') + '</tr>';
       });
       h += '</table>';
     }
+    if(r.after) h += '<p class="lc-note">' + r.after + '</p>';
     h += '</div>';
   });
   return h + '</div>';
